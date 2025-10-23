@@ -1,5 +1,6 @@
 package com.vote.votebackend.domain.user.entity;
 
+import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,38 +14,39 @@ import java.time.LocalDateTime;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name="user_")
+@Table(name = "user_")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name ="username", unique = true, nullable = false, updatable = false)
+    @Column(name = "username", unique = true, nullable = false, updatable = false)
     private String username;
 
-    @Column(name="password", nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name="is_lock", nullable = false)
+    @Column(name = "is_lock", nullable = false)
     private Boolean isLock;
-    @Column(name="is_social",nullable = false)
+    @Column(name = "is_social", nullable = false)
     private Boolean isSocial;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="social_provider_type")
+    @Column(name = "social_provider_type")
     private SocialProviderType socialProviderType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role_type", nullable = false)
     private UserRoleType roleType;
 
-    @Column(name = "nickname")
+    @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false)
     private String email;
 
     @CreatedDate
@@ -55,4 +57,8 @@ public class UserEntity {
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
 
+    public void updateUser(UserRequestDTO dto) {
+        this.email = dto.getEmail();
+        this.nickname = dto.getNickname();
+    }
 }

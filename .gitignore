@@ -35,3 +35,22 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Spring Boot ###
+application.properties
+application.yml
+*.log
+logs/
+log/
+*.jar
+*.war
+*.ear
+target/
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Env files ###
+.env
