@@ -4,19 +4,18 @@ import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
-import org.apache.catalina.User;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.beans.Transient;
-import java.nio.file.AccessDeniedException;
 
-@
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
@@ -30,7 +29,7 @@ public class UserService {
     //자체 로그인 회원 가입 (존재 여부 체크)
     @Transactional(readOnly = true)
     public Boolean existUser(UserRequestDTO dto) {
-        return userRepository.existsByUsername(dto.getUserName());
+        return userRepository.existsByUsername(dto.getUsername());
     }
 
     //자체 로그인 회원 가입
@@ -54,6 +53,20 @@ public class UserService {
     }
 
     //자체 로그인
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(username,false,false)
+                .orElseThrow(()->new UsernameNotFoundException(username));
+
+        return User.builder()
+                .username(entity.getUsername())
+                .password(entity.getPassword())
+                .roles(entity.getRoleType().name())
+                .accountLocked(entity.getIsLock())
+                .build();
+
+    }
 
     //자체 로그인 회원 정보 수정
     @Transactional
@@ -62,7 +75,7 @@ public class UserService {
         //본인만 수정 가능 검증
         String sessionUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!sessionUsername.equals(dto.getUsername())) {
-            throw new org.springframework.security.access.AccessDeniedException("본인 계정만 수정가능합니다.")
+            throw new org.springframework.security.access.AccessDeniedException("본인 계정만 수정가능합니다.");
         }
         //조회
         UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(dto.getUsername(), false, false)
@@ -75,6 +88,8 @@ public class UserService {
     }
 
     //자체/소셜 로그인 회원 탈퇴
+
+
 
     //소셜 로그인 ( 매 로그인시: 신규 = 가입, 기존 = 업데이트)
 
