@@ -1,4 +1,4 @@
-package com.vote.votebackend;
+package com.vote.votebackend.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StreamUtils;
@@ -41,10 +42,13 @@ public class LoginFilter extends AbstractAuthenticationProcessingFilter {
     // 실제로 사용할 password 키(커스터마이즈 가능)
     private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
 
+    private final AuthenticationSuccessHandler authenticationSuccessHandler;
+
     // 필터 생성자: 어떤 AuthenticationManager로 인증을 위임할지 주입
-    public LoginFilter(AuthenticationManager authenticationManager) {
+    public LoginFilter(AuthenticationManager authenticationManager, AuthenticationSuccessHandler authenticationSuccessHandler) {
         // 부모 생성자에 "이 필터가 언제 동작할지(요청 매처)"와 "인증 매니저"를 전달
         super(DEFAULT_ANT_PATH_REQUEST_MATCHER, authenticationManager);
+        this.authenticationSuccessHandler = authenticationSuccessHandler;
     }
 
     // 필터의 핵심: 매칭된 요청이 오면 인증 시도 로직을 수행
@@ -102,4 +106,8 @@ public class LoginFilter extends AbstractAuthenticationProcessingFilter {
         authRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
     }
 
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+        authenticationSuccessHandler.onAuthenticationSuccess(request, response, authResult);
+    }
 }
