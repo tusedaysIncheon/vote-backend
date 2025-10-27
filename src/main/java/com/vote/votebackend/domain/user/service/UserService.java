@@ -18,7 +18,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -34,12 +33,12 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final AssertTrueValidator assertTrueValidator;
 
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, AssertTrueValidator assertTrueValidator) {
+
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
-        this.assertTrueValidator = assertTrueValidator;
+
     }
 
 
