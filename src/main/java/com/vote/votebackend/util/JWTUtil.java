@@ -15,7 +15,7 @@ public class JWTUtil {
     private static final Long refreshTokenExpiresIn;
 
     static {
-        String secretKeyString ="pleasesubscribemyyoutubechanel";   //배포시 변경요망
+        String secretKeyString ="pleasesubscribemyyoutubechanelForJeonjaeman";   //배포시 변경요망
         secretKey = new SecretKeySpec(secretKeyString.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
         accessTokenExpiresIn = 3600L * 1000;
         refreshTokenExpiresIn = 604800L * 1000;

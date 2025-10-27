@@ -1,28 +1,45 @@
 package com.vote.votebackend.domain.user.service;
 
+import com.vote.votebackend.domain.user.entity.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
+import com.vote.votebackend.domain.user.model.CustomOAuth2User;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
+import org.hibernate.validator.internal.constraintvalidators.bv.AssertTrueValidator;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService extends DefaultOAuth2UserService implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final AssertTrueValidator assertTrueValidator;
 
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, AssertTrueValidator assertTrueValidator) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
+        this.assertTrueValidator = assertTrueValidator;
     }
 
 
@@ -75,7 +92,7 @@ public class UserService implements UserDetailsService {
         //본인만 수정 가능 검증
         String sessionUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!sessionUsername.equals(dto.getUsername())) {
-            throw new org.springframework.security.access.AccessDeniedException("본인 계정만 수정가능합니다.");
+            throw new AccessDeniedException("본인 계정만 수정가능합니다.");
         }
         //조회
         UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(dto.getUsername(), false, false)
@@ -92,6 +109,79 @@ public class UserService implements UserDetailsService {
 
 
     //소셜 로그인 ( 매 로그인시: 신규 = 가입, 기존 = 업데이트)
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+
+        //DefaultOAuth2UserService 의 loadUser 메소드 오버라이드
+        //부모 메서드 호출
+        OAuth2User oAuth2User = super.loadUser(userRequest);
+
+        //데이터
+        Map<String, Object> attributes;
+        List<GrantedAuthority> authorities;
+
+        String username;
+        String role = UserRoleType.USER.name();
+        String email;
+        String nickname;
+
+        //provider 제공자 별 데이터 획득 ( 제공자 마다 데이터 제공 방법이 다름)
+
+        String registrationId = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
+        if(registrationId.equals(SocialProviderType.NAVER.name())){
+
+            attributes = (Map<String, Object>) oAuth2User.getAttributes().get("response");
+            username = registrationId + "_" + attributes.get("id");
+            email = attributes.get("email").toString();
+            nickname = attributes.get("nickname").toString();
+
+        } else if(registrationId.equals(SocialProviderType.GOOGLE.name())){
+
+            attributes = (Map<String, Object>) oAuth2User.getAttributes();
+            username = registrationId + "_" + attributes.get("sub");
+            email = attributes.get("email").toString();
+            nickname = attributes.get("nickname").toString();
+
+
+        } else {
+            throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인입니다.");
+        }
+
+        // 데이터베이스 조회 -> 존재하면 업데이트, 없으면 신규 가입
+        Optional<UserEntity> entity = userRepository.findByUsernameAndIsSocial(username, true);
+        if(entity.isPresent()){
+            //role 조회
+            role = entity.get().getRoleType().name();
+
+            //기존 유저 업데이트
+            UserRequestDTO dto = new UserRequestDTO();
+            dto.setNickname(nickname);
+            dto.setEmail(email);
+            entity.get().updateUser(dto);
+
+            userRepository.save(entity.get());
+        } else {
+            // 신규 유저 추가
+            UserEntity userEntity = UserEntity.builder()
+                    .username(username)
+                    .password("")
+                    .isLock(false)
+                    .isSocial(true)
+                    .socialProviderType(SocialProviderType.valueOf(registrationId))
+                    .roleType(UserRoleType.USER)
+                    .nickname(nickname)
+                    .email(email)
+                    .build();
+
+            userRepository.save(userEntity);
+        }
+
+        authorities = List.of(new SimpleGrantedAuthority(role));
+
+        return new CustomOAuth2User(attributes, authorities, username);
+
+    }
+
 
     //자체 /소셜 유저 정보조회
 
