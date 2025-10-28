@@ -1,15 +1,17 @@
 package com.vote.votebackend.domain.user.service;
 
+import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.domain.user.entity.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
 import com.vote.votebackend.domain.user.model.CustomOAuth2User;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
+import com.vote.votebackend.domain.user.model.UserResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
-import org.hibernate.validator.internal.constraintvalidators.bv.AssertTrueValidator;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,12 +35,13 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
 
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, JwtService jwtService) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
-
+        this.jwtService = jwtService;
     }
 
 
@@ -72,8 +75,8 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(username,false,false)
-                .orElseThrow(()->new UsernameNotFoundException(username));
+        UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(username, false, false)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
 
         return User.builder()
                 .username(entity.getUsername())
@@ -104,7 +107,28 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
     }
 
     //자체/소셜 로그인 회원 탈퇴
+    @Transactional
+    public void deleteUser(UserRequestDTO dto) throws AccessDeniedException {
+        //본인 또는 어드민만 가능하게 검증 작업
+        SecurityContext context = SecurityContextHolder.getContext();
+        String sessionUsername = context.getAuthentication().getName();
+        String sessionRole = context.getAuthentication().getAuthorities().iterator().next().getAuthority();
 
+        boolean isOwner = sessionUsername.equals(dto.getUsername());
+        boolean isAdmin = sessionRole.equals("ROLE_" + UserRoleType.ADMIN.name());
+
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("본인 혹은 관리자만 삭제할 수 있습니다.");
+        }
+
+        //Refresh 토큰 제거 (참조 제약 or 캐시 일관성 문제로 먼저 삭제)
+        jwtService.removeRefreshUser(dto.getUsername());
+
+        //유저 삭제
+        userRepository.deleteByUsername(dto.getUsername());
+
+
+    }
 
 
     //소셜 로그인 ( 매 로그인시: 신규 = 가입, 기존 = 업데이트)
@@ -127,14 +151,14 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         //provider 제공자 별 데이터 획득 ( 제공자 마다 데이터 제공 방법이 다름)
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
-        if(registrationId.equals(SocialProviderType.NAVER.name())){
+        if (registrationId.equals(SocialProviderType.NAVER.name())) {
 
             attributes = (Map<String, Object>) oAuth2User.getAttributes().get("response");
             username = registrationId + "_" + attributes.get("id");
             email = attributes.get("email").toString();
             nickname = attributes.get("nickname").toString();
 
-        } else if(registrationId.equals(SocialProviderType.GOOGLE.name())){
+        } else if (registrationId.equals(SocialProviderType.GOOGLE.name())) {
 
             attributes = (Map<String, Object>) oAuth2User.getAttributes();
             username = registrationId + "_" + attributes.get("sub");
@@ -148,7 +172,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         // 데이터베이스 조회 -> 존재하면 업데이트, 없으면 신규 가입
         Optional<UserEntity> entity = userRepository.findByUsernameAndIsSocial(username, true);
-        if(entity.isPresent()){
+        if (entity.isPresent()) {
             //role 조회
             role = entity.get().getRoleType().name();
 
@@ -183,5 +207,17 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
 
     //자체 /소셜 유저 정보조회
+    @Transactional(readOnly = true)
+    public UserResponseDTO readUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        if(username == null){
+            throw new AccessDeniedException("존재하지 않는 유저입니다.");
+        }
+
+        UserEntity entity = userRepository.findByUsernameAndIsLock(username, false)
+                .orElseThrow(() -> new UsernameNotFoundException("해당 유저를 찾을 수 없습니다" + username));
+
+        return new UserResponseDTO(username, entity.getIsSocial(), entity.getNickname(), entity.getEmail());
+    }
 }
