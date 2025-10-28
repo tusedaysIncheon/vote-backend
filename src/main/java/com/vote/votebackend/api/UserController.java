@@ -1,18 +1,16 @@
 package com.vote.votebackend.api;
 
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
+import com.vote.votebackend.domain.user.model.UserResponseDTO;
 import com.vote.votebackend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -20,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/user")
-@Tag(name="user", description ="회원가입 및 유저 정보 수정삭제 API")
+@Tag(name = "user", description = "회원가입 및 유저 정보 수정삭제 API")
 public class UserController {
 
     private final UserService userService;
@@ -30,7 +28,7 @@ public class UserController {
     @PostMapping(value = "/exist", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Boolean> exist(
             @Validated(UserRequestDTO.existGroup.class) @RequestBody UserRequestDTO dto
-    ){
+    ) {
         return ResponseEntity.ok(userService.existUser(dto));
     }
 
@@ -48,11 +46,34 @@ public class UserController {
 
     }
 
-    // 유저 정보
+    // 유저 정보 불러오기
+    @Operation(summary = "회원정보", description = "유저정보 불러오기 API.")
+    @GetMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public UserResponseDTO userMeApi() {
+
+        return userService.readUser();
+    }
 
     // 유저 수정 (자체 로그인 유저만)
+    @Operation(summary = "회원정보", description = "회원 정보 수정 API.")
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Long> updateUserApi(
+            @Validated(UserRequestDTO.updateGroup.class) @RequestBody UserRequestDTO dto
+    ) throws AccessDeniedException {
+
+        return ResponseEntity.status(200).body(userService.updateUser(dto));
+    }
+
 
     // 유저 제거 (자체/소셜)
+    @Operation(summary = "회원탈퇴", description = "회원탈퇴 (JWT RefreshToken remove 및 회원정보 db 삭제) API.")
+    @DeleteMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Boolean> deleteUserApi(
+            @Validated(UserRequestDTO.deleteGroup.class) @RequestBody UserRequestDTO dto
+    ) throws AccessDeniedException {
+        userService.deleteUser(dto);
+        return ResponseEntity.status(200).body(true);
+    }
 
 
 }
