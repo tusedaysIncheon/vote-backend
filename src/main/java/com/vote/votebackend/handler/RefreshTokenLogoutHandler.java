@@ -2,22 +2,17 @@ package com.vote.votebackend.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.openid.connect.sdk.LogoutRequest;
 import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 @RequiredArgsConstructor
@@ -43,7 +38,7 @@ public class RefreshTokenLogoutHandler implements LogoutHandler {
 
             Boolean isValid = JWTUtil.isValid(refreshToken, false);
 
-            if(isValid) return;
+            if(!isValid) return;
 
             jwtService.removeRefresh(refreshToken);
 
