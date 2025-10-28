@@ -1,6 +1,8 @@
 package com.vote.votebackend.config;
 
+import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.filter.LoginFilter;
+import com.vote.votebackend.handler.RefreshTokenLogoutHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +16,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -25,13 +26,15 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final AuthenticationSuccessHandler loginSuccessHandler;
     private final AuthenticationSuccessHandler SocialLoginSuccessHandler;
+    private final JwtService jwtService;
 
     public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
                           @Qualifier("LoginSuccessHandler") AuthenticationSuccessHandler loginSuccessHandler,
-                          @Qualifier("SocialSuccessHandler")AuthenticationSuccessHandler socialLoginSuccessHandler) {
+                          @Qualifier("SocialSuccessHandler")AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.loginSuccessHandler = loginSuccessHandler;
         this.SocialLoginSuccessHandler = socialLoginSuccessHandler;
+        this.jwtService = jwtService;
     }
 
     // 커스텀 자체 로그인 필터를 위한 AuthenticationManager Bean 수동 등록
@@ -54,7 +57,12 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable);
 
-        //CORS FE와 BE가 다른 오리진을 가진 경우 셋팅해야함 (react + spring)
+        //CORS 설정
+        //FE와 BE가 다른 오리진을 가진 경우 셋팅해야함 (react + spring)
+        // 기본 로그아웃 필터 + 커스텀 Refresh 토큰 삭제 핸들러 추가
+        http
+                .logout(logout -> logout
+                        .addLogoutHandler(new RefreshTokenLogoutHandler(jwtService)));
 
 
         // 기본 form 기반 인증 필터 disable
