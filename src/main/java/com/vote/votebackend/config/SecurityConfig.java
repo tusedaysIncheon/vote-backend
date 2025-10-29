@@ -1,6 +1,7 @@
 package com.vote.votebackend.config;
 
 import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.filter.JWTFilter;
 import com.vote.votebackend.filter.LoginFilter;
 import com.vote.votebackend.handler.RefreshTokenLogoutHandler;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -96,6 +98,9 @@ public class SecurityConfig {
                 );
 
         // 커스텀 필터 추가
+        http
+                .addFilterBefore(new JWTFilter(), LogoutFilter.class);
+
         http
                 .addFilterBefore(new LoginFilter(authenticationManager(authenticationConfiguration), loginSuccessHandler), UsernamePasswordAuthenticationFilter.class);
 
