@@ -70,9 +70,9 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         UserEntity saved = userRepository.save(entity);
 
         return new UserResponseDTO(
-                saved.getNickname(),
-                saved.getIsSocial(),
                 saved.getUsername(),
+                saved.getIsSocial(),
+                saved.getNickname(),
                 saved.getEmail()
         );
 
