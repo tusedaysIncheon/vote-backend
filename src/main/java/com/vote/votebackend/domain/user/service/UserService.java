@@ -53,7 +53,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
     //자체 로그인 회원 가입
     @Transactional
-    public Long addUser(UserRequestDTO dto) {
+    public UserResponseDTO addUser(UserRequestDTO dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {                 //또 검증하는 이유는 db에 접근하지 않고 거르는 existUser 메서드가 있음에도 불구하고 db에 바로 접근을 하는 경우도 있음
             throw new IllegalArgumentException("이미 유저가 존재합니다.");
         }
@@ -67,7 +67,14 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                 .email(dto.getEmail())
                 .build();
 
-        return userRepository.save(entity).getId();
+        UserEntity saved = userRepository.save(entity);
+
+        return new UserResponseDTO(
+                saved.getNickname(),
+                saved.getIsSocial(),
+                saved.getUsername(),
+                saved.getEmail()
+        );
 
     }
 

@@ -1,13 +1,18 @@
 package com.vote.votebackend.config;
 
 import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.domain.user.entity.UserRoleType;
 import com.vote.votebackend.filter.JWTFilter;
 import com.vote.votebackend.filter.LoginFilter;
 import com.vote.votebackend.handler.RefreshTokenLogoutHandler;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +25,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -32,7 +42,7 @@ public class SecurityConfig {
 
     public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
                           @Qualifier("LoginSuccessHandler") AuthenticationSuccessHandler loginSuccessHandler,
-                          @Qualifier("SocialSuccessHandler")AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService) {
+                          @Qualifier("SocialSuccessHandler") AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.loginSuccessHandler = loginSuccessHandler;
         this.SocialLoginSuccessHandler = socialLoginSuccessHandler;
@@ -45,15 +55,40 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
+    //권한 계층 나누는 Bean
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.withRolePrefix("ROLE_")
+                .role(UserRoleType.ADMIN.name()).implies(UserRoleType.USER.name())
+                .build();
+    }
+
     // 비밀번호 단방향(BCrypt) 암호화용 Bean
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    //CORS 설정
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+
     //securityFilterChain
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityFilterChain oauth2SecurityFilterChain) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         //CSRF 보안필터 x
         http
@@ -61,6 +96,8 @@ public class SecurityConfig {
 
         //CORS 설정
         //FE와 BE가 다른 오리진을 가진 경우 셋팅해야함 (react + spring)
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         // 기본 로그아웃 필터 + 커스텀 Refresh 토큰 삭제 핸들러 추가
         http
                 .logout(logout -> logout
@@ -85,8 +122,13 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll());
-
+                        .requestMatchers("/jwt/refresh", "/jwt/exchange").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/user/exist", "/v1/user").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/user").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.PUT, "/v1/user").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.DELETE, "/v1/user").hasRole(UserRoleType.USER.name())
+                        .anyRequest().authenticated()
+                );
         http
                 .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
                                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);

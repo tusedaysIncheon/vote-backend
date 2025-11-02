@@ -6,6 +6,7 @@ import com.vote.votebackend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -36,13 +37,12 @@ public class UserController {
     // 회원가입
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록 API.")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Long>> registerUserApi(
+    public ResponseEntity<UserResponseDTO> registerUserApi(
             @Validated(UserRequestDTO.addGroup.class) @RequestBody UserRequestDTO dto
     ) {
 
-        Long id = userService.addUser(dto);
-        Map<String, Long> responseBody = Collections.singletonMap("userEntityId", id);
-        return ResponseEntity.status(201).body(responseBody);
+        UserResponseDTO userResponse = userService.addUser(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
 
     }
 
