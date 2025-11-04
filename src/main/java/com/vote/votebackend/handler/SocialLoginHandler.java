@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -15,16 +16,13 @@ import java.io.IOException;
 
 @Component
 @Qualifier("SocialSuccessHandler")
+@RequiredArgsConstructor
 public class SocialLoginHandler implements AuthenticationSuccessHandler {
 
     private final JwtService jwtService;
 
-    public SocialLoginHandler(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
-
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 
         //username , role 파싱
         String username = authentication.getName();

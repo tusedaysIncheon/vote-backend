@@ -1,20 +1,20 @@
 package com.vote.votebackend.api;
 
+import com.vote.votebackend.domain.user.model.NicknameUpdateRequestDTO;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import com.vote.votebackend.domain.user.model.UserResponseDTO;
 import com.vote.votebackend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collections;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -73,6 +73,16 @@ public class UserController {
     ) throws AccessDeniedException {
         userService.deleteUser(dto);
         return ResponseEntity.status(200).body(true);
+    }
+
+    //유저 닉네임만 따로받는 API
+    @Operation(summary = "회원가입", description = "회원가입 시 닉네임 따로받는 API")
+    @PatchMapping("/nickname")
+    public ResponseEntity<UserResponseDTO> updateNicknameApi(
+            @Valid @RequestBody NicknameUpdateRequestDTO request, @AuthenticationPrincipal String username) {
+
+        UserResponseDTO response = userService.updateNickname(username, request.nickname());
+        return ResponseEntity.ok(response);
     }
 
 

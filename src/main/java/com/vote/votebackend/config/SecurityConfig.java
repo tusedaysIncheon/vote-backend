@@ -6,7 +6,6 @@ import com.vote.votebackend.filter.JWTFilter;
 import com.vote.votebackend.filter.LoginFilter;
 import com.vote.votebackend.handler.RefreshTokenLogoutHandler;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,7 +73,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
@@ -127,6 +126,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/user").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.PUT, "/v1/user").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.DELETE, "/v1/user").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.PATCH, "/v1/user/nickname").hasRole(UserRoleType.USER.name())
                         .anyRequest().authenticated()
                 );
         http

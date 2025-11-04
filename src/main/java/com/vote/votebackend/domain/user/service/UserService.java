@@ -73,7 +73,8 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                 saved.getUsername(),
                 saved.getIsSocial(),
                 saved.getNickname(),
-                saved.getEmail()
+                saved.getEmail(),
+                saved.isNeedsNickname()
         );
 
     }
@@ -153,25 +154,24 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         String username;
         String role = UserRoleType.USER.name();
         String email;
-        String nickname;
+
 
         //provider 제공자 별 데이터 획득 ( 제공자 마다 데이터 제공 방법이 다름)
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
+
+
         if (registrationId.equals(SocialProviderType.NAVER.name())) {
 
             attributes = (Map<String, Object>) oAuth2User.getAttributes().get("response");
             username = registrationId + "_" + attributes.get("id");
             email = attributes.get("email").toString();
-            nickname = attributes.get("nickname").toString();
 
         } else if (registrationId.equals(SocialProviderType.GOOGLE.name())) {
 
             attributes = (Map<String, Object>) oAuth2User.getAttributes();
             username = registrationId + "_" + attributes.get("sub");
             email = attributes.get("email").toString();
-            nickname = attributes.get("nickname").toString();
-
 
         } else {
             throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인입니다.");
@@ -179,17 +179,10 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         // 데이터베이스 조회 -> 존재하면 업데이트, 없으면 신규 가입
         Optional<UserEntity> entity = userRepository.findByUsernameAndIsSocial(username, true);
+
         if (entity.isPresent()) {
             //role 조회
             role = entity.get().getRoleType().name();
-
-            //기존 유저 업데이트
-            UserRequestDTO dto = new UserRequestDTO();
-            dto.setNickname(nickname);
-            dto.setEmail(email);
-            entity.get().updateUser(dto);
-
-            userRepository.save(entity.get());
         } else {
             // 신규 유저 추가
             UserEntity userEntity = UserEntity.builder()
@@ -199,7 +192,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                     .isSocial(true)
                     .socialProviderType(SocialProviderType.valueOf(registrationId))
                     .roleType(UserRoleType.USER)
-                    .nickname(nickname)
+                    .needsNickname(true)
                     .email(email)
                     .build();
 
@@ -225,6 +218,26 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         UserEntity entity = userRepository.findByUsernameAndIsLock(username, false)
                 .orElseThrow(() -> new UsernameNotFoundException("해당 유저를 찾을 수 없습니다" + username));
 
-        return new UserResponseDTO(username, entity.getIsSocial(), entity.getNickname(), entity.getEmail());
+        return new UserResponseDTO(username, entity.getIsSocial(), entity.getNickname(), entity.getEmail(), entity.isNeedsNickname());
+    }
+
+    @Transactional
+    public UserResponseDTO updateNickname(String username, String nickname) {
+        if (username == null) {
+            throw new UsernameNotFoundException("인증 정보가 유효하지 않습니다.");
+        }
+
+        userRepository.updateNicknameByUsername(username, nickname);
+
+        UserEntity saved = userRepository.findByUsernameAndIsSocial(username, true)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+
+        return new UserResponseDTO(
+                saved.getUsername(),
+                saved.getIsSocial(),
+                saved.getNickname(),
+                saved.getEmail(),
+                saved.isNeedsNickname()
+        );
     }
 }
