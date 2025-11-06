@@ -1,6 +1,5 @@
 package com.vote.votebackend.domain.user.repository;
 
-import ch.qos.logback.core.testUtil.MockInitialContext;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
 import jakarta.validation.constraints.NotBlank;
