@@ -122,7 +122,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/jwt/refresh", "/jwt/exchange").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/user/exist", "/v1/user").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/user/exist", "/v1/user", "/v1/user/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/user").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.PUT, "/v1/user").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.DELETE, "/v1/user").hasRole(UserRoleType.USER.name())

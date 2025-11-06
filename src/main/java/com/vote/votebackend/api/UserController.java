@@ -1,8 +1,9 @@
 package com.vote.votebackend.api;
 
-import com.vote.votebackend.domain.user.model.NicknameUpdateRequestDTO;
-import com.vote.votebackend.domain.user.model.UserRequestDTO;
-import com.vote.votebackend.domain.user.model.UserResponseDTO;
+import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.domain.user.entity.UserEntity;
+import com.vote.votebackend.domain.user.model.*;
+import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +25,9 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     // 자체 로그인 유저 존재 확인
     @Operation(summary = "회원가입", description = "자체 로그인 관련 회원가입 진행 시 해당 유저가 존재 하는지 확인 API.")
@@ -48,7 +53,7 @@ public class UserController {
 
     // 유저 정보 불러오기
     @Operation(summary = "회원정보", description = "유저정보 불러오기 API.")
-    @GetMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public UserResponseDTO userMeApi() {
 
         return userService.readUser();
@@ -85,5 +90,42 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    //로그인 API
+    @Operation(summary = "로그인", description = "로그인 API")
+    @PostMapping(value="/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AuthLoginResponseDTO>loginApi(
+            @Valid @RequestBody LoginRequestDTO request
+    ){
+        // 1) 아이디로 '일반' 유저 조회 (isLock=false, isSocial=false)
+        //    - 소셜 유저는 이 API가 아니라 OAuth 플로우로 로그인하므로 제외
+        UserEntity user = userRepository
+                .findByUsernameAndIsLockAndIsSocial(request.getUsername(),false,false)
+                .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        if(!passwordEncoder.matches(request.getPassword(),user.getPassword())){
+            throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
+        }
+
+        String accessToken = jwtService.createAccessToken(user.getUsername());
+        String refreshToken = jwtService.createRefreshToken(user.getUsername());
+
+        jwtService.addRefresh(user.getUsername(),refreshToken);
+
+        UserResponseDTO userDTO = new UserResponseDTO(
+                user.getUsername(),
+                user.getIsSocial(),
+                user.getNickname(),
+                user.getEmail(),
+                user.isNeedsNickname()
+        );
+
+        AuthLoginResponseDTO response = new AuthLoginResponseDTO(
+                accessToken,
+                refreshToken,
+                userDTO
+        );
+
+            return ResponseEntity.ok(response);
+    }
 
 }

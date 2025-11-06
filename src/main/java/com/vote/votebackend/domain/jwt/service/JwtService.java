@@ -4,6 +4,8 @@ import com.vote.votebackend.domain.jwt.entity.RefreshEntity;
 import com.vote.votebackend.domain.jwt.model.JWTResponseDTO;
 import com.vote.votebackend.domain.jwt.model.RefreshRequestDTO;
 import com.vote.votebackend.domain.jwt.repository.RefreshRepository;
+import com.vote.votebackend.domain.user.entity.UserRoleType;
+import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,13 +13,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 public class JwtService {
 
     private final RefreshRepository refreshRepository;
+    private final UserRepository userRepository;
 
-    public JwtService(RefreshRepository refreshRepository) {
+    public JwtService(RefreshRepository refreshRepository, UserRepository userRepository) {
         this.refreshRepository = refreshRepository;
+        this.userRepository = userRepository;
     }
 
     // 소셜 로그인 성공 후 쿠키(Refresh) -> 헤더 방식으로 응답
@@ -149,6 +155,23 @@ public class JwtService {
         refreshRepository.deleteByUsername(username);
     }
 
+    // 로그인 시 access 토큰 발급 메소드
+    public String createAccessToken(String username) {
 
+        String role = userRepository.findRoleTypeByUsername(username)
+                .map(Enum::name)
+                .orElse(UserRoleType.USER.name());
+
+        return JWTUtil.createJWT(username, role, true);
+    }
+
+    //로그인 시 refresh 토큰 발급 메소드
+    public String createRefreshToken(String username) {
+        String role = userRepository.findRoleTypeByUsername(username)
+                .map(Enum::name)
+                .orElse(UserRoleType.USER.name());
+
+        return JWTUtil.createJWT(username, role, false);
+    }
 }
 

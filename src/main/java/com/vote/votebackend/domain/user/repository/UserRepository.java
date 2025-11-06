@@ -1,6 +1,8 @@
 package com.vote.votebackend.domain.user.repository;
 
+import ch.qos.logback.core.testUtil.MockInitialContext;
 import com.vote.votebackend.domain.user.entity.UserEntity;
+import com.vote.votebackend.domain.user.entity.UserRoleType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -23,6 +25,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByUsernameAndIsSocial(String username, Boolean isSocial);
     Optional<UserEntity> findByUsernameAndIsLock(String username, boolean isLock);
 
+    //JWT 발급용 -> 롤타입 확인용
+    @Query("SELECT u.roleType FROM UserEntity u WHERE u.username = :username")
+    Optional<UserRoleType> findRoleTypeByUsername(String username);
+
     void deleteByUsername(String username);
 
 
@@ -41,5 +47,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             String nickname
     );
 
-    }
+
+}
 
