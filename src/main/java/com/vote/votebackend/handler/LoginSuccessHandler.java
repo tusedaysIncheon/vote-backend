@@ -34,10 +34,9 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             String accessToken = JWTUtil.createJWT(username, role, true);
             String refreshToken = JWTUtil.createJWT(username, role, false);
 
-            String deviceId = request.getHeader("User-Agent"); // or request parameter
-
-            if (deviceId == null || deviceId.isEmpty()) {
-                deviceId = "unknown-device";
+            String deviceId = request.getHeader("Device-Id");
+            if (deviceId == null || deviceId.isBlank()) {
+                deviceId = request.getHeader("User-Agent"); // fallback
             }
 
             // 발급한 Refresh DB 테이블 저장 (Refresh whitelist)

@@ -33,9 +33,9 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         //JWT 발급
         String refreshToken = JWTUtil.createJWT(username, "ROLE_" + role, false);
 
-        String deviceId = request.getHeader("User-Agent");
-        if (deviceId == null || deviceId.isEmpty()) {
-            deviceId = "unknown-device";
+        String deviceId = request.getHeader("Device-Id");
+        if (deviceId == null || deviceId.isBlank()) {
+            deviceId = request.getHeader("User-Agent");
         }
 
         jwtService.removeRefreshByUsernameAndDeviceId(username,deviceId);

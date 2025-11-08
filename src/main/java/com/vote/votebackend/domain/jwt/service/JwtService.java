@@ -69,6 +69,7 @@ public class JwtService {
             deviceId = request.getHeader("User-Agent"); // fallback
         }
 
+
         //새 토큰 발급
         String newAccessToken = JWTUtil.createJWT(username, role, true);
         String newRefreshToken = JWTUtil.createJWT(username, role, false);
