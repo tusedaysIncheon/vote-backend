@@ -109,7 +109,13 @@ public class UserController {
         String accessToken = jwtService.createAccessToken(user.getUsername());
         String refreshToken = jwtService.createRefreshToken(user.getUsername());
 
-        jwtService.addRefresh(user.getUsername(),refreshToken);
+        // 4️⃣ 기기 식별자 (User-Agent 기반 or 프론트 전달값)
+        String deviceId = request.getDeviceId(); // <— 새 필드 추가
+        if (deviceId == null || deviceId.isEmpty()) {
+            deviceId = "unknown-device";
+        }
+
+        jwtService.addRefresh(user.getUsername(),refreshToken, deviceId);
 
         UserResponseDTO userDTO = new UserResponseDTO(
                 user.getUsername(),

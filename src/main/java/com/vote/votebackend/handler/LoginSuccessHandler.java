@@ -23,27 +23,33 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         this.jwtService = jwtService;
     }
 
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
-        // username, role
-        String username =  authentication.getName();
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
+            // username, role
+            String username =  authentication.getName();
+            String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        // JWT(Access/Refresh) 발급
-        String accessToken = JWTUtil.createJWT(username, role, true);
-        String refreshToken = JWTUtil.createJWT(username, role, false);
+            // JWT(Access/Refresh) 발급
+            String accessToken = JWTUtil.createJWT(username, role, true);
+            String refreshToken = JWTUtil.createJWT(username, role, false);
 
-        // 발급한 Refresh DB 테이블 저장 (Refresh whitelist)
-        jwtService.addRefresh(username, refreshToken);
+            String deviceId = request.getHeader("User-Agent"); // or request parameter
 
-        // 응답
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
+            if (deviceId == null || deviceId.isEmpty()) {
+                deviceId = "unknown-device";
+            }
 
-        String json = String.format("{\"accessToken\":\"%s\", \"refreshToken\":\"%s\"}", accessToken, refreshToken);
-        response.getWriter().write(json);
-        response.getWriter().flush();
-    }
+            // 발급한 Refresh DB 테이블 저장 (Refresh whitelist)
+            jwtService.addRefresh(username, refreshToken, deviceId);
+
+            // 응답
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            String json = String.format("{\"accessToken\":\"%s\", \"refreshToken\":\"%s\"}", accessToken, refreshToken);
+            response.getWriter().write(json);
+            response.getWriter().flush();
+        }
 
 }

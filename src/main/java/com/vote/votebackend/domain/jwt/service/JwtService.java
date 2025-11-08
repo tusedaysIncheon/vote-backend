@@ -64,16 +64,23 @@ public class JwtService {
         String username = JWTUtil.getUsername(refreshToken);
         String role = JWTUtil.getRole(refreshToken);
 
+        String deviceId = request.getHeader("Device-Id");
+        if (deviceId == null || deviceId.isBlank()) {
+            deviceId = request.getHeader("User-Agent"); // fallback
+        }
+
         //새 토큰 발급
         String newAccessToken = JWTUtil.createJWT(username, role, true);
         String newRefreshToken = JWTUtil.createJWT(username, role, false);
 
+
         RefreshEntity newRefreshEntity = RefreshEntity.builder()
                 .username(username)
+                .deviceId(deviceId)
                 .refresh(newRefreshToken)
                 .build();
 
-        removeRefresh(refreshToken);
+        removeRefreshByUsernameAndDeviceId(username,deviceId);
         refreshRepository.flush();
         refreshRepository.save(newRefreshEntity);
 
@@ -88,6 +95,8 @@ public class JwtService {
         return new JWTResponseDTO(newAccessToken, newRefreshToken);
 
     }
+
+
 
     // Refresh 토큰으로 Access 토큰 재발급 로직 (Rotate 포함)
     @Transactional
@@ -107,6 +116,10 @@ public class JwtService {
         String username = JWTUtil.getUsername(refreshToken);
         String role = JWTUtil.getRole(refreshToken);
 
+        String deviceId = refreshRepository.findByRefresh(refreshToken)
+                .map(RefreshEntity::getDeviceId)
+                .orElse("unknown-device");
+
         String newAccessToken = JWTUtil.createJWT(username, role, true);
         String newRefreshToken = JWTUtil.createJWT(username, role, false);
 
@@ -123,9 +136,12 @@ public class JwtService {
 
     // JWT Refresh 토큰 발급 후 저장 메소드
     @Transactional
-    public void addRefresh(String username, String refreshToken) {
+    public void addRefresh(String username, String refreshToken, String deviceId) {
+       removeRefreshByUsernameAndDeviceId(username,deviceId);
+
         RefreshEntity entity = RefreshEntity.builder()
                 .username(username)
+                .deviceId(deviceId)
                 .refresh(refreshToken)
                 .build();
 
@@ -155,9 +171,8 @@ public class JwtService {
 
     // 로그인 시 access 토큰 발급 메소드
     public String createAccessToken(String username) {
-
         String role = userRepository.findRoleTypeByUsername(username)
-                .map(Enum::name)
+                .map(Enum :: name)
                 .orElse(UserRoleType.USER.name());
 
         return JWTUtil.createJWT(username, role, true);
@@ -171,5 +186,11 @@ public class JwtService {
 
         return JWTUtil.createJWT(username, role, false);
     }
+
+    public void removeRefreshByUsernameAndDeviceId(String username, String deviceId) {
+        refreshRepository.deleteByUsernameAndDeviceId(username, deviceId);
+    }
+
+
 }
 

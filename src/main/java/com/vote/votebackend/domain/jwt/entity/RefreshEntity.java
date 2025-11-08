@@ -29,8 +29,12 @@ public class RefreshEntity {
     @Column(name="refresh", nullable = false, length = 512)
     private String refresh;
 
+    @Column(name = "device_id")
+    private String deviceId;
+
     @CreatedDate
     @Column(name="created_date", updatable = false)
     private LocalDateTime createdDate;
+
 
 }
