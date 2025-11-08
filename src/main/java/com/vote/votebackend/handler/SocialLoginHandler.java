@@ -48,7 +48,7 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(10);
+        refreshCookie.setMaxAge(60);
 
         response.addCookie(refreshCookie); // 10초 (프론트에서 발급 후 바로 헤더 전환 예정)
         response.sendRedirect("http://localhost:5173/cookie"); //프론트 주소 -> 포트번호 확인후 변경!
