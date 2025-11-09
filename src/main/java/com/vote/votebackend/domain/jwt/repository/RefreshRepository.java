@@ -16,10 +16,12 @@ public interface RefreshRepository extends JpaRepository<RefreshEntity, Long> {
     @Transactional
     void deleteByUsername(String username);
 
+    @Transactional
     void deleteByUsernameAndDeviceId(String username, String deviceId);
 
-
+    @Transactional
     void deleteByCreatedDateBefore(LocalDateTime cutoff);
 
+    @Transactional
     Optional<RefreshEntity> findByRefresh(String refreshToken);
 }

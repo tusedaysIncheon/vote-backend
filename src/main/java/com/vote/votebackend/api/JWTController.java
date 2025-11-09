@@ -1,17 +1,13 @@
 package com.vote.votebackend.api;
 
 
-import com.nimbusds.jwt.JWT;
 import com.vote.votebackend.domain.jwt.model.JWTResponseDTO;
 import com.vote.votebackend.domain.jwt.model.RefreshRequestDTO;
 import com.vote.votebackend.domain.jwt.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.parameters.P;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,11 +28,10 @@ public class JWTController {
 
     //Refresh 토큰으로 Access 토큰 재발급
     @PostMapping(value = "/jwt/refresh", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public JWTResponseDTO jwtRefreshAPI(@Validated @RequestBody RefreshRequestDTO dto) {
+    public JWTResponseDTO jwtRefreshAPI(@Validated @RequestBody RefreshRequestDTO dto, HttpServletResponse response) {
 
-        return jwtService.refreshRotate(dto);
+        return jwtService.refreshRotate(dto, response);
     }
 
 
 }
-

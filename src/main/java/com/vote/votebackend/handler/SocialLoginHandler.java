@@ -1,9 +1,7 @@
 package com.vote.votebackend.handler;
 
-import com.vote.votebackend.domain.jwt.repository.RefreshRepository;
 import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.util.JWTUtil;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +19,6 @@ import java.io.IOException;
 public class SocialLoginHandler implements AuthenticationSuccessHandler {
 
     private final JwtService jwtService;
-    private final RefreshRepository refreshRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -37,8 +34,6 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         if (deviceId == null || deviceId.isBlank()) {
             deviceId = request.getHeader("User-Agent");
         }
-
-        jwtService.removeRefreshByUsernameAndDeviceId(username,deviceId);
 
         //발급한 리프레쉬 토큰 DB 테이블 저장
         jwtService.addRefresh(username, refreshToken, deviceId);

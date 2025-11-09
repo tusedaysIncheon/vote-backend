@@ -54,21 +54,17 @@ public class JwtService {
         }
 
         //refresh 토큰 검증
-
         Boolean isValid = JWTUtil.isValid(refreshToken, false);
         if (!isValid) {
             throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
         }
 
-        //유저 정보 추출
-        String username = JWTUtil.getUsername(refreshToken);
+        RefreshEntity storedRefresh = refreshRepository.findByRefresh(refreshToken)
+                .orElseThrow(() -> new RuntimeException("화이트리스트에 존재하지 않는 토큰입니다."));
+
+        String username = storedRefresh.getUsername();
         String role = JWTUtil.getRole(refreshToken);
-
-        String deviceId = request.getHeader("Device-Id");
-        if (deviceId == null || deviceId.isBlank()) {
-            deviceId = request.getHeader("User-Agent"); // fallback
-        }
-
+        String deviceId = storedRefresh.getDeviceId();
 
         //새 토큰 발급
         String newAccessToken = JWTUtil.createJWT(username, role, true);
@@ -81,19 +77,17 @@ public class JwtService {
                 .refresh(newRefreshToken)
                 .build();
 
-        removeRefreshByUsernameAndDeviceId(username,deviceId);
-        refreshRepository.flush();
+        removeRefresh(refreshToken);
         refreshRepository.save(newRefreshEntity);
 
-        //기존 쿠키 제거
-        Cookie refreshCookie = new Cookie("refresh_token", null);
+        Cookie refreshCookie = new Cookie("refresh_token", newRefreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(10);
+        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(refreshCookie);
 
-        return new JWTResponseDTO(newAccessToken, newRefreshToken);
+        return new JWTResponseDTO(newAccessToken);
 
     }
 
@@ -101,7 +95,7 @@ public class JwtService {
 
     // Refresh 토큰으로 Access 토큰 재발급 로직 (Rotate 포함)
     @Transactional
-    public JWTResponseDTO refreshRotate(RefreshRequestDTO dto) {
+    public JWTResponseDTO refreshRotate(RefreshRequestDTO dto, HttpServletResponse response) {
 
         String refreshToken = dto.getRefreshToken();
 
@@ -110,29 +104,33 @@ public class JwtService {
             throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
         }
 
-        if (!existsRefresh(refreshToken)) {
-            throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
-        }
+        RefreshEntity storedRefresh = refreshRepository.findByRefresh(refreshToken)
+                .orElseThrow(() -> new RuntimeException("유효하지 않은 리프레쉬 토큰입니다."));
 
-        String username = JWTUtil.getUsername(refreshToken);
+        String username = storedRefresh.getUsername();
         String role = JWTUtil.getRole(refreshToken);
-
-        String deviceId = refreshRepository.findByRefresh(refreshToken)
-                .map(RefreshEntity::getDeviceId)
-                .orElse("unknown-device");
+        String deviceId = storedRefresh.getDeviceId();
 
         String newAccessToken = JWTUtil.createJWT(username, role, true);
         String newRefreshToken = JWTUtil.createJWT(username, role, false);
 
         RefreshEntity newRefreshEntity = RefreshEntity.builder()
                 .username(username)
+                .deviceId(deviceId)
                 .refresh(newRefreshToken)
                 .build();
 
         removeRefresh(refreshToken);
         refreshRepository.save(newRefreshEntity);
 
-        return new JWTResponseDTO(newAccessToken, newRefreshToken);
+        Cookie refreshCookie = new Cookie("refresh_token", newRefreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(refreshCookie);
+
+        return new JWTResponseDTO(newAccessToken);
     }
 
     // JWT Refresh 토큰 발급 후 저장 메소드
@@ -159,6 +157,7 @@ public class JwtService {
 
     // JWT Refresh 토큰 삭제 메소드
     // 레포지토리 커스텀 JPA 에 트랜잭셔널 선언을 이미했음.
+
 
     public void removeRefresh(String refreshToken) {
         refreshRepository.deleteByRefresh(refreshToken);
@@ -194,4 +193,3 @@ public class JwtService {
 
 
 }
-

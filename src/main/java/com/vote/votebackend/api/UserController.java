@@ -7,6 +7,8 @@ import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -94,7 +96,8 @@ public class UserController {
     @Operation(summary = "로그인", description = "로그인 API")
     @PostMapping(value="/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthLoginResponseDTO>loginApi(
-            @Valid @RequestBody LoginRequestDTO request
+            @Valid @RequestBody LoginRequestDTO request,
+            HttpServletResponse response
     ){
         // 1) 아이디로 '일반' 유저 조회 (isLock=false, isSocial=false)
         //    - 소셜 유저는 이 API가 아니라 OAuth 플로우로 로그인하므로 제외
@@ -125,13 +128,19 @@ public class UserController {
                 user.isNeedsNickname()
         );
 
-        AuthLoginResponseDTO response = new AuthLoginResponseDTO(
+        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false); // TODO : 추후 배포시 true로 변경 예정
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(refreshCookie);
+
+        AuthLoginResponseDTO responseBody = new AuthLoginResponseDTO(
                 accessToken,
-                refreshToken,
                 userDTO
         );
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(responseBody);
     }
 
 }

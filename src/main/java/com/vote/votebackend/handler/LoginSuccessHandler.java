@@ -3,6 +3,7 @@ package com.vote.votebackend.handler;
 import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.util.JWTUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,7 +25,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     }
 
         @Override
-        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 
             // username, role
             String username =  authentication.getName();
@@ -42,11 +43,18 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             // 발급한 Refresh DB 테이블 저장 (Refresh whitelist)
             jwtService.addRefresh(username, refreshToken, deviceId);
 
+            Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false); // 프로덕션은 true
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
+            response.addCookie(refreshCookie);
+
             // 응답
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
 
-            String json = String.format("{\"accessToken\":\"%s\", \"refreshToken\":\"%s\"}", accessToken, refreshToken);
+            String json = String.format("{\"accessToken\": \"%s\"}", accessToken);
             response.getWriter().write(json);
             response.getWriter().flush();
         }
