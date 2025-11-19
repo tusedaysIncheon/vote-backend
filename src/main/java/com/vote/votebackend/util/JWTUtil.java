@@ -10,30 +10,42 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class JWTUtil {
-    private static final SecretKey secretKey;
-    private static final Long accessTokenExpiresIn;
-    private static final Long refreshTokenExpiresIn;
+    private static SecretKey secretKey;
+    private static Long accessTokenExpiresIn;
+    private static Long refreshTokenExpiresIn;
+    private static boolean initialized = false;
 
-    static {
-        String secretKeyString ="pleasesubscribemyyoutubechanelForJeonjaeman";   //배포시 변경요망
+    private JWTUtil() {}
+
+    public static void initialize(String secretKeyString, long accessTokenMillis, long refreshTokenMillis) {
         secretKey = new SecretKeySpec(secretKeyString.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
-        accessTokenExpiresIn = 3600L * 1000;
-        refreshTokenExpiresIn = 604800L * 1000;
+        accessTokenExpiresIn = accessTokenMillis;
+        refreshTokenExpiresIn = refreshTokenMillis;
+        initialized = true;
+    }
+
+    private static void ensureInitialized() {
+        if (!initialized) {
+            throw new IllegalStateException("JWTUtil is not initialized. Ensure jwt.secret and expiration properties are configured.");
+        }
     }
 
     //JWT username, role 파싱
 
     public static String getUsername(String token) {
+        ensureInitialized();
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("sub", String.class);
     }
 
     public static String getRole(String token) {
+        ensureInitialized();
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
     }
 
     //JWT 유효검증
     public static Boolean isValid(String token, Boolean isAccessToken){
         try {
+            ensureInitialized();
             Claims claims = Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
@@ -57,6 +69,7 @@ public class JWTUtil {
     //JWT 생성 (Access/Refresh)
     public static String createJWT(String username, String role, Boolean isAccess){
 
+        ensureInitialized();
         Long now = System.currentTimeMillis();
         Long expired = isAccess? accessTokenExpiresIn:refreshTokenExpiresIn;
         String type = isAccess?"access":"refresh";
@@ -71,4 +84,6 @@ public class JWTUtil {
                 .compact();
 
     }
+
+
 }

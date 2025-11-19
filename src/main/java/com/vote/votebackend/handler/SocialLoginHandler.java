@@ -27,13 +27,13 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         String username = authentication.getName();
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        //JWT 발급
-        String refreshToken = JWTUtil.createJWT(username, "ROLE_" + role, false);
-
         String deviceId = request.getHeader("Device-Id");
         if (deviceId == null || deviceId.isBlank()) {
             deviceId = request.getHeader("User-Agent");
         }
+
+        //JWT 발급
+        String refreshToken = JWTUtil.createJWT(username, "ROLE_" + role, false);
 
         //발급한 리프레쉬 토큰 DB 테이블 저장
         jwtService.addRefresh(username, refreshToken, deviceId);

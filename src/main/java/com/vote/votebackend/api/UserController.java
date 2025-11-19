@@ -98,6 +98,7 @@ public class UserController {
     public ResponseEntity<AuthLoginResponseDTO>loginApi(
             @Valid @RequestBody LoginRequestDTO request,
             HttpServletResponse response
+
     ){
         // 1) 아이디로 '일반' 유저 조회 (isLock=false, isSocial=false)
         //    - 소셜 유저는 이 API가 아니라 OAuth 플로우로 로그인하므로 제외
@@ -109,14 +110,15 @@ public class UserController {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
-        String accessToken = jwtService.createAccessToken(user.getUsername());
-        String refreshToken = jwtService.createRefreshToken(user.getUsername());
-
         // 4️⃣ 기기 식별자 (User-Agent 기반 or 프론트 전달값)
         String deviceId = request.getDeviceId(); // <— 새 필드 추가
         if (deviceId == null || deviceId.isEmpty()) {
             deviceId = "unknown-device";
         }
+
+        String accessToken = jwtService.createAccessToken(user.getUsername());
+        String refreshToken = jwtService.createRefreshToken(user.getUsername());
+
 
         jwtService.addRefresh(user.getUsername(),refreshToken, deviceId);
 

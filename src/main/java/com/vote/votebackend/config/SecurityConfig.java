@@ -23,7 +23,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.context.NullSecurityContextRepository;
+import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -112,6 +113,10 @@ public class SecurityConfig {
         http
                 .httpBasic(AbstractHttpConfigurer::disable);
 
+        http
+                .requestCache(cache -> cache
+                        .requestCache(new NullRequestCache()));
+
         //OAuth2 인증용
         http
                 .oauth2Login(oauth2 -> oauth2
@@ -141,16 +146,21 @@ public class SecurityConfig {
 
         // 커스텀 필터 추가
         http
-                .addFilterBefore(new JWTFilter(), LogoutFilter.class);
+                .addFilterBefore(new JWTFilter(), UsernamePasswordAuthenticationFilter.class);
 
         http
                 .addFilterBefore(new LoginFilter(authenticationManager(authenticationConfiguration), loginSuccessHandler), UsernamePasswordAuthenticationFilter.class);
+
+        http
+                .securityContext(context -> context
+                        .securityContextRepository(new NullSecurityContextRepository()));
 
         //세션필터 설정 -> JWT 방식은 세션을 꺼야됌 클라이언트의 세션정보를 서버에 저장하지않음 토큰을 계속 확인하면서 처리하는 API
 
         http
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionFixation(sessionFixation -> sessionFixation.none()));
 
 
         return http.build();

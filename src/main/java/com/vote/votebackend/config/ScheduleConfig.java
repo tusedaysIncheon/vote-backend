@@ -2,7 +2,6 @@ package com.vote.votebackend.config;
 
 import com.vote.votebackend.domain.jwt.repository.RefreshRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

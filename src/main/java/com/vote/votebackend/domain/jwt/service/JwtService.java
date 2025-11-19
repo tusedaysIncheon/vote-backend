@@ -98,8 +98,8 @@ public class JwtService {
     public JWTResponseDTO refreshRotate(RefreshRequestDTO dto, HttpServletResponse response) {
 
         String refreshToken = dto.getRefreshToken();
-
         Boolean isValid = JWTUtil.isValid(refreshToken, false);
+
         if (!isValid) {
             throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
         }

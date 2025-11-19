@@ -1,10 +1,11 @@
 package com.vote.votebackend.domain.jwt.repository;
-import java.util.Optional;
+
 import com.vote.votebackend.domain.jwt.entity.RefreshEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface RefreshRepository extends JpaRepository<RefreshEntity, Long> {
 
@@ -24,4 +25,8 @@ public interface RefreshRepository extends JpaRepository<RefreshEntity, Long> {
 
     @Transactional
     Optional<RefreshEntity> findByRefresh(String refreshToken);
+
+    @Transactional
+    Optional<RefreshEntity> findByUsernameAndDeviceId(String username, String deviceId);
+
 }
