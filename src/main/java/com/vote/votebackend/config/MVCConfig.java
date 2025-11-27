@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+//SecurityConfig에 이미 설정되어있음 지워도 됨 확인후 지우삼
+
 @Configuration
 public class MVCConfig implements WebMvcConfigurer {
 
