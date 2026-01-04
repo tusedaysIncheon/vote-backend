@@ -27,10 +27,7 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         String username = authentication.getName();
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        String deviceId = request.getHeader("Device-Id");
-        if (deviceId == null || deviceId.isBlank()) {
-            deviceId = request.getHeader("User-Agent");
-        }
+        String deviceId = "unknown-device-id";
 
         //JWT 발급
         String refreshToken = JWTUtil.createJWT(username, "ROLE_" + role, false);

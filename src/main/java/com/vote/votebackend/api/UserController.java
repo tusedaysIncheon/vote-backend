@@ -1,6 +1,7 @@
 package com.vote.votebackend.api;
 
 import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.domain.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.model.*;
 import com.vote.votebackend.domain.user.repository.UserRepository;
@@ -20,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/user")
@@ -30,6 +33,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RedisService redisService;
 
     // 자체 로그인 유저 존재 확인
     @Operation(summary = "회원가입", description = "자체 로그인 관련 회원가입 진행 시 해당 유저가 존재 하는지 확인 API.")
@@ -144,5 +148,28 @@ public class UserController {
 
             return ResponseEntity.ok(responseBody);
     }
+
+    @Operation(summary = "로그아웃", description = "로그아웃 API (Redis 토큰 삭제 및 쿠키 만료)")
+    @PostMapping("/logout")
+    public ResponseEntity<Boolean> logoutApi(
+            HttpServletResponse response,
+            @AuthenticationPrincipal String username,
+            @RequestBody(required = false)Map<String, String> body
+            ){
+        String deviceId = (body != null) ? body.get("deviceId") : "unknown-device";
+
+        redisService.deleteRefreshToken(username,deviceId);
+
+        Cookie cookie = new Cookie("refresh_token", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // TODO : 추후 배포시 true로 변경 예정
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok(true);
+
+    }
+
 
 }

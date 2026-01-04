@@ -1,6 +1,7 @@
 package com.vote.votebackend.domain.user.service;
 
 import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.domain.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
@@ -8,6 +9,7 @@ import com.vote.votebackend.domain.user.model.CustomOAuth2User;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import com.vote.votebackend.domain.user.model.UserResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,18 +33,14 @@ import java.util.Optional;
 
 
 @Service
+@RequiredArgsConstructor
 public class UserService extends DefaultOAuth2UserService implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final JwtService jwtService;
+    private final RedisService redisService;
 
 
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, JwtService jwtService) {
-        this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
-    }
 
 
     //자체 로그인 회원 가입 (존재 여부 체크)
@@ -130,7 +128,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         }
 
         //Refresh 토큰 제거 (참조 제약 or 캐시 일관성 문제로 먼저 삭제)
-        jwtService.removeRefreshUser(dto.getUsername());
+        redisService.deleteAllRefreshTokens(dto.getUsername());
 
         //유저 삭제
         userRepository.deleteByUsername(dto.getUsername());

@@ -4,7 +4,6 @@ import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
 import com.vote.votebackend.filter.JWTFilter;
 import com.vote.votebackend.filter.LoginFilter;
-import com.vote.votebackend.handler.RefreshTokenLogoutHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -99,10 +98,10 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         // 기본 로그아웃 필터 + 커스텀 Refresh 토큰 삭제 핸들러 추가
-        http
-                .logout(logout -> logout
-                        .addLogoutHandler(new RefreshTokenLogoutHandler(jwtService)));
-
+//        http
+//                .logout(logout -> logout
+//                        .addLogoutHandler(new RefreshTokenLogoutHandler(jwtService)));
+//
 
         // 기본 form 기반 인증 필터 disable
         http
