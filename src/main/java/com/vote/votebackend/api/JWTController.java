@@ -7,6 +7,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,7 +41,7 @@ public class JWTController {
 
     // Refresh 토큰으로 Access 토큰 재발급
     @PostMapping(value = "/jwt/refresh")
-    public JWTResponseDTO jwtRefreshAPI(
+    public ResponseEntity<?> jwtRefreshAPI(
             HttpServletRequest request,
             HttpServletResponse response,
             // Body가 비어있어도 괜찮도록 required = false
@@ -59,10 +61,10 @@ public class JWTController {
             }
         }
 
-        // 2. 쿠키 값 검증 (없으면 에러)
+        // 2. 쿠키 값 검증 (없으면 게스트)
         if (refreshToken == null || refreshToken.isBlank()) {
-            // [중요] 토큰이 없으면 401이나 400을 명확히 리턴하거나 예외 발생
-            throw new IllegalArgumentException("리프레시 토큰이 쿠키에 없습니다.");
+
+            return ResponseEntity.ok().body(Map.of("message","Guest Mode","accessToken",""));
         }
 
         // 3. deviceId 처리 (Null Safe 하게 변경)
@@ -77,6 +79,12 @@ public class JWTController {
         dto.setRefreshToken(refreshToken);
 
         // 5. 토큰 재발급 진행
-        return jwtService.refreshRotate(dto, response, deviceId);
+        try {
+            JWTResponseDTO newToken = jwtService.refreshRotate(dto, response, deviceId);
+            return ResponseEntity.ok(newToken);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("리프레쉬 토큰 확인안됨");
+        }
+
     }
 }

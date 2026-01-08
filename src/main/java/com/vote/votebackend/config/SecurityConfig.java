@@ -3,11 +3,14 @@ package com.vote.votebackend.config;
 import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.domain.user.entity.UserRoleType;
 import com.vote.votebackend.filter.JWTFilter;
-import com.vote.votebackend.filter.LoginFilter;
+import com.vote.votebackend.filter.RateLimitFilter;
+import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
@@ -38,14 +41,21 @@ public class SecurityConfig {
     private final AuthenticationSuccessHandler loginSuccessHandler;
     private final AuthenticationSuccessHandler SocialLoginSuccessHandler;
     private final JwtService jwtService;
+    private final LettuceBasedProxyManager<byte[]> proxyManager;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
                           @Qualifier("LoginSuccessHandler") AuthenticationSuccessHandler loginSuccessHandler,
-                          @Qualifier("SocialSuccessHandler") AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService) {
+                          @Qualifier("SocialSuccessHandler") AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService, LettuceBasedProxyManager<byte[]> proxyManager, RedisTemplate<String, Object> redisTemplate) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.loginSuccessHandler = loginSuccessHandler;
         this.SocialLoginSuccessHandler = socialLoginSuccessHandler;
         this.jwtService = jwtService;
+        this.proxyManager = proxyManager;
+        this.redisTemplate = redisTemplate;
     }
 
     // 커스텀 자체 로그인 필터를 위한 AuthenticationManager Bean 수동 등록
@@ -72,7 +82,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -143,12 +153,18 @@ public class SecurityConfig {
 
                 );
 
+
+        //bucket 필터 추가
+        http
+                .addFilterBefore(new RateLimitFilter(proxyManager, redisTemplate)
+                , UsernamePasswordAuthenticationFilter.class);
+
         // 커스텀 필터 추가
         http
                 .addFilterBefore(new JWTFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        http
-                .addFilterBefore(new LoginFilter(authenticationManager(authenticationConfiguration), loginSuccessHandler), UsernamePasswordAuthenticationFilter.class);
+//        http
+//                .addFilterBefore(new LoginFilter(authenticationManager(authenticationConfiguration), loginSuccessHandler), UsernamePasswordAuthenticationFilter.class);
 
         http
                 .securityContext(context -> context

@@ -22,18 +22,12 @@ public class JWTFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
         String authorization = request.getHeader("Authorization");
-        if (authorization == null) {                    //인가가 없으면 다음필터로 넘김
+
+        if (authorization == null || !authorization.startsWith("Bearer ")) {                    //인가가 없으면 다음필터로 넘김
             filterChain.doFilter(request,response);
 
-            return;
-        }
-
-        if (!authorization.startsWith("Bearer ")) {
-            log.warn("Invalid Authorization header for URI {} - expected Bearer token", request.getRequestURI());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"error\":\"유효하지 않은 Authorization 헤더\"}");
             return;
         }
 
@@ -50,13 +44,13 @@ public class JWTFilter extends OncePerRequestFilter {
             Authentication authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            filterChain.doFilter(request,response);
+
 
         } else {
-            log.warn("JWTFilter rejecting token for URI {} - invalid/expired token", request.getRequestURI());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"error\":\"토큰 만료 또는 유효하지 않은 토큰\"}");
+            log.warn("유효하지 않은 토큰입니다. (URI: {}) - 익명 사용자로 처리됩니다.", request.getRequestURI());
+
         }
+
+        filterChain.doFilter(request,response);
     }
 }
