@@ -42,14 +42,5 @@ public class UserRequestDTO {
     @Email(message = "유효한 이메일 주소를 입력해주세요.", groups = {addGroup.class, updateGroup.class})
     private String email;
 
-    @Schema(description = "닉네임", example = "투표왕")
-    @NotBlank(message = "닉네임은 필수입니다.", groups = {addGroup.class, updateGroup.class})
-    @Size(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하로 작성해주세요.", groups = {addGroup.class, updateGroup.class})
-    @Pattern(
-            regexp = "^[가-힣a-zA-Z0-9._-]+$",
-            message = "닉네임은 한글/영문/숫자/._-만 허용합니다.",
-            groups = {addGroup.class, updateGroup.class}
-    )
-    private String nickname;
 
 }
