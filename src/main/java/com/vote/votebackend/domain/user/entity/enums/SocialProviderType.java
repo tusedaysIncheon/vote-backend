@@ -1,4 +1,4 @@
-package com.vote.votebackend.domain.user.entity;
+package com.vote.votebackend.domain.user.entity.enums;
 
 public enum SocialProviderType {
 

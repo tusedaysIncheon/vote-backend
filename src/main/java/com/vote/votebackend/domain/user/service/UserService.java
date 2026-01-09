@@ -1,10 +1,9 @@
 package com.vote.votebackend.domain.user.service;
 
-import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.domain.jwt.service.RedisService;
-import com.vote.votebackend.domain.user.entity.SocialProviderType;
+import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
-import com.vote.votebackend.domain.user.entity.UserRoleType;
+import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.domain.user.model.CustomOAuth2User;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import com.vote.votebackend.domain.user.model.UserResponseDTO;
@@ -61,7 +60,6 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                 .isLock(false)
                 .isSocial(false)
                 .roleType(UserRoleType.USER)
-                .nickname(dto.getNickname())
                 .email(dto.getEmail())
                 .build();
 
@@ -70,9 +68,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         return new UserResponseDTO(
                 saved.getUsername(),
                 saved.getIsSocial(),
-                saved.getNickname(),
-                saved.getEmail(),
-                saved.isNeedsNickname()
+                saved.getEmail()
         );
 
     }
@@ -190,7 +186,6 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                     .isSocial(true)
                     .socialProviderType(SocialProviderType.valueOf(registrationId))
                     .roleType(UserRoleType.USER)
-                    .needsNickname(true)
                     .email(email)
                     .build();
 
@@ -216,26 +211,8 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         UserEntity entity = userRepository.findByUsernameAndIsLock(username, false)
                 .orElseThrow(() -> new UsernameNotFoundException("해당 유저를 찾을 수 없습니다" + username));
 
-        return new UserResponseDTO(username, entity.getIsSocial(), entity.getNickname(), entity.getEmail(), entity.isNeedsNickname());
+        return new UserResponseDTO(username, entity.getIsSocial(),  entity.getEmail());
     }
 
-    @Transactional
-    public UserResponseDTO updateNickname(String username, String nickname) {
-        if (username == null) {
-            throw new UsernameNotFoundException("인증 정보가 유효하지 않습니다.");
-        }
 
-        userRepository.updateNicknameByUsername(username, nickname);
-
-        UserEntity saved = userRepository.findByUsernameAndIsSocial(username, true)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
-
-        return new UserResponseDTO(
-                saved.getUsername(),
-                saved.getIsSocial(),
-                saved.getNickname(),
-                saved.getEmail(),
-                saved.isNeedsNickname()
-        );
-    }
 }

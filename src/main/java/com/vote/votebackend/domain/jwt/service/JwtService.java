@@ -2,7 +2,7 @@ package com.vote.votebackend.domain.jwt.service;
 
 import com.vote.votebackend.domain.jwt.model.JWTResponseDTO;
 import com.vote.votebackend.domain.jwt.model.RefreshRequestDTO;
-import com.vote.votebackend.domain.user.entity.UserRoleType;
+import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

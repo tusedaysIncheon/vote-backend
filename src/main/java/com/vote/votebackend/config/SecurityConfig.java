@@ -1,7 +1,7 @@
 package com.vote.votebackend.config;
 
 import com.vote.votebackend.domain.jwt.service.JwtService;
-import com.vote.votebackend.domain.user.entity.UserRoleType;
+import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.filter.JWTFilter;
 import com.vote.votebackend.filter.RateLimitFilter;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;

@@ -79,13 +79,6 @@ public class UserController {
         return ResponseEntity.ok(true);
     }
 
-    @Operation(summary = "닉네임 수정", description = "회원가입 시 닉네임 따로받는 API")
-    @PatchMapping("/nickname")
-    public ResponseEntity<UserResponseDTO> updateNicknameApi(
-            @Valid @RequestBody NicknameUpdateRequestDTO request, @AuthenticationPrincipal String username) {
-        UserResponseDTO response = userService.updateNickname(username, request.nickname());
-        return ResponseEntity.ok(response);
-    }
 
     @Operation(summary = "로그인", description = "로그인 API (SameSite 쿠키 적용)")
     @PostMapping(value="/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -120,9 +113,7 @@ public class UserController {
         UserResponseDTO userDTO = new UserResponseDTO(
                 user.getUsername(),
                 user.getIsSocial(),
-                user.getNickname(),
-                user.getEmail(),
-                user.isNeedsNickname()
+                user.getEmail()
         );
 
         //Cookie -> ResponseCookie 교체

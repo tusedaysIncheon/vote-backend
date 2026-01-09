@@ -1,5 +1,7 @@
 package com.vote.votebackend.domain.user.entity;
 
+import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
+import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,15 +45,8 @@ public class UserEntity {
     @Column(name = "role_type", nullable = false)
     private UserRoleType roleType;
 
-    // 닉네임은 로그인 후 추후에 받을 예정
-    @Column(name = "nickname", nullable = true)
-    private String nickname;
-
     @Column(name = "email", nullable = false)
     private String email;
-
-    @Column(name = "needs_nickname", nullable = false, columnDefinition = "boolean default true")
-    private boolean needsNickname = true;
 
     @CreatedDate
     @Column(name = "created_date", updatable = false)
@@ -64,11 +59,6 @@ public class UserEntity {
     //일반 회원정보 업데이트 용
     public void updateUser(UserRequestDTO dto) {
         this.email = dto.getEmail();
-        this.nickname = dto.getNickname();
     }
-    //회원가입시 닉네임 입력 메서드
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
-        this.needsNickname = false;
-    }
+
 }
