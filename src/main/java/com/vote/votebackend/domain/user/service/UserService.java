@@ -1,6 +1,6 @@
 package com.vote.votebackend.domain.user.service;
 
-import com.vote.votebackend.domain.jwt.service.RedisService;
+import com.vote.votebackend.global.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;

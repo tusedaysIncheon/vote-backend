@@ -1,4 +1,4 @@
-package com.vote.votebackend.config;
+package com.vote.votebackend.global.config;
 
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;

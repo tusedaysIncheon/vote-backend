@@ -1,4 +1,4 @@
-package com.vote.votebackend.domain.jwt.model;
+package com.vote.votebackend.global.jwt.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

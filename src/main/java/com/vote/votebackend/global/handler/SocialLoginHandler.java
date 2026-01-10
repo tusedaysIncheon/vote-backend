@@ -1,7 +1,7 @@
-package com.vote.votebackend.handler;
+package com.vote.votebackend.global.handler;
 
-import com.vote.votebackend.domain.jwt.service.JwtService;
-import com.vote.votebackend.util.JWTUtil;
+import com.vote.votebackend.global.jwt.service.JwtService;
+import com.vote.votebackend.global.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-@Qualifier("SocialSuccessHandler")
+@Qualifier("socialSuccessHandler")
 @RequiredArgsConstructor
 public class SocialLoginHandler implements AuthenticationSuccessHandler {
 

@@ -1,10 +1,10 @@
-package com.vote.votebackend.domain.jwt.service;
+package com.vote.votebackend.global.jwt.service;
 
-import com.vote.votebackend.domain.jwt.model.JWTResponseDTO;
-import com.vote.votebackend.domain.jwt.model.RefreshRequestDTO;
+import com.vote.votebackend.global.jwt.model.JWTResponseDTO;
+import com.vote.votebackend.global.jwt.model.RefreshRequestDTO;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.domain.user.repository.UserRepository;
-import com.vote.votebackend.util.JWTUtil;
+import com.vote.votebackend.global.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
