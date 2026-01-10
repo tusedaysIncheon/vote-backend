@@ -4,6 +4,7 @@ package com.vote.votebackend.api;
 import com.vote.votebackend.domain.user.model.UserDetailsRequestDTO;
 import com.vote.votebackend.domain.user.model.UserDetailsResponseDTO;
 import com.vote.votebackend.domain.user.service.UserDetailService;
+import com.vote.votebackend.global.security.custom.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,11 @@ public class UserDetailsController {
 
     @PostMapping
     public ResponseEntity<String> saveUserDetails(
-            @AuthenticationPrincipal String username,
+            @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody UserDetailsRequestDTO dto
             ){
+
+        String username = user.getUsername();
         log.info("save user details : {}", username);
 
         userDetailService.saveUserDetails(username, dto);
@@ -34,7 +37,9 @@ public class UserDetailsController {
 
     @GetMapping
     public ResponseEntity<UserDetailsResponseDTO> getMyInfo(
-            @AuthenticationPrincipal String username){
+            @AuthenticationPrincipal CustomUserDetails user){
+
+        String username = user.getUsername();
         log.info("get user details : {}", username);
 
         UserDetailsResponseDTO profile =  userDetailService.getProfile(username);

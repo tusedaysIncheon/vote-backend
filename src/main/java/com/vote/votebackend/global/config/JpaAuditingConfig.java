@@ -1,4 +1,4 @@
-package com.vote.votebackend.config;
+package com.vote.votebackend.global.config;
 
 
 import org.springframework.context.annotation.Configuration;

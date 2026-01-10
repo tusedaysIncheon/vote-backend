@@ -1,13 +1,12 @@
-package com.vote.votebackend.api;
+package com.vote.votebackend.global.jwt.api;
 
-import com.vote.votebackend.domain.jwt.model.JWTResponseDTO;
-import com.vote.votebackend.domain.jwt.model.RefreshRequestDTO;
-import com.vote.votebackend.domain.jwt.service.JwtService;
+import com.vote.votebackend.global.jwt.model.JWTResponseDTO;
+import com.vote.votebackend.global.jwt.model.RefreshRequestDTO;
+import com.vote.votebackend.global.jwt.service.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -1,11 +1,12 @@
 package com.vote.votebackend.api;
 
-import com.vote.votebackend.domain.jwt.service.JwtService;
-import com.vote.votebackend.domain.jwt.service.RedisService;
+import com.vote.votebackend.global.jwt.service.JwtService;
+import com.vote.votebackend.global.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.model.*;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.domain.user.service.UserService;
+import com.vote.votebackend.global.security.custom.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -81,7 +82,7 @@ public class UserController {
 
 
     @Operation(summary = "로그인", description = "로그인 API (SameSite 쿠키 적용)")
-    @PostMapping(value="/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthLoginResponseDTO> loginApi(
             @Valid @RequestBody LoginRequestDTO request,
             HttpServletResponse response
@@ -137,13 +138,13 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<Boolean> logoutApi(
             HttpServletResponse response,
-            @AuthenticationPrincipal String username,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody(required = false) Map<String, String> body
     ) {
         String deviceId = (body != null && body.get("deviceId") != null) ? body.get("deviceId") : "unknown-device";
-
         // 1. Redis 삭제
-        if (username != null) {
+        if (user != null) {
+            String username = user.getUsername();
             redisService.deleteRefreshToken(username, deviceId);
         }
 

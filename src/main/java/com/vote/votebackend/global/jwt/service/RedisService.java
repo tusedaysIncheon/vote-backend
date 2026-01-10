@@ -1,4 +1,4 @@
-package com.vote.votebackend.domain.jwt.service;
+package com.vote.votebackend.global.jwt.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

@@ -1,4 +1,4 @@
-package com.vote.votebackend.util;
+package com.vote.votebackend.global.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

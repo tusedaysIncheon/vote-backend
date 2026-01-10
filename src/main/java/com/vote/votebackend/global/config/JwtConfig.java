@@ -1,6 +1,6 @@
-package com.vote.votebackend.config;
+package com.vote.votebackend.global.config;
 
-import com.vote.votebackend.util.JWTUtil;
+import com.vote.votebackend.global.util.JWTUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

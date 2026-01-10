@@ -1,4 +1,4 @@
-package com.vote.votebackend.filter;
+package com.vote.votebackend.global.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bandwidth;

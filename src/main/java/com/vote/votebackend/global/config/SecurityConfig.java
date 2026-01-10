@@ -1,9 +1,8 @@
-package com.vote.votebackend.config;
+package com.vote.votebackend.global.config;
 
-import com.vote.votebackend.domain.jwt.service.JwtService;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
-import com.vote.votebackend.filter.JWTFilter;
-import com.vote.votebackend.filter.RateLimitFilter;
+import com.vote.votebackend.global.filter.JWTFilter;
+import com.vote.votebackend.global.filter.RateLimitFilter;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,6 +19,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,25 +37,21 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final AuthenticationConfiguration authenticationConfiguration;
-    private final AuthenticationSuccessHandler loginSuccessHandler;
-    private final AuthenticationSuccessHandler SocialLoginSuccessHandler;
-    private final JwtService jwtService;
+
+    private final AuthenticationSuccessHandler socialLoginSuccessHandler;
     private final LettuceBasedProxyManager<byte[]> proxyManager;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserDetailsService userDetailsService;
 
     @Value("${cors.allowed-origins}")
     private List<String> allowedOrigins;
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
-                          @Qualifier("LoginSuccessHandler") AuthenticationSuccessHandler loginSuccessHandler,
-                          @Qualifier("SocialSuccessHandler") AuthenticationSuccessHandler socialLoginSuccessHandler, JwtService jwtService, LettuceBasedProxyManager<byte[]> proxyManager, RedisTemplate<String, Object> redisTemplate) {
-        this.authenticationConfiguration = authenticationConfiguration;
-        this.loginSuccessHandler = loginSuccessHandler;
-        this.SocialLoginSuccessHandler = socialLoginSuccessHandler;
-        this.jwtService = jwtService;
+    public SecurityConfig(
+            @Qualifier("socialSuccessHandler") AuthenticationSuccessHandler socialLoginSuccessHandler, LettuceBasedProxyManager<byte[]> proxyManager, RedisTemplate<String, Object> redisTemplate, @Qualifier("userDetailsServiceImpl") UserDetailsService userDetailsService) {
+        this.socialLoginSuccessHandler = socialLoginSuccessHandler;
         this.proxyManager = proxyManager;
         this.redisTemplate = redisTemplate;
+        this.userDetailsService = userDetailsService;
     }
 
     // 커스텀 자체 로그인 필터를 위한 AuthenticationManager Bean 수동 등록
@@ -129,18 +125,19 @@ public class SecurityConfig {
         //OAuth2 인증용
         http
                 .oauth2Login(oauth2 -> oauth2
-                        .successHandler(SocialLoginSuccessHandler));
+                        .successHandler(socialLoginSuccessHandler));
 
         //인가
 
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/jwt/refresh", "/jwt/exchange").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/user/exist", "/v1/user", "/v1/user/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/user").hasRole(UserRoleType.USER.name())
-                        .requestMatchers(HttpMethod.PUT, "/v1/user").hasRole(UserRoleType.USER.name())
-                        .requestMatchers(HttpMethod.DELETE, "/v1/user").hasRole(UserRoleType.USER.name())
-                        .requestMatchers(HttpMethod.PATCH, "/v1/user/nickname").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.POST, "/v*/user/exist", "/v*/user", "/v*/user/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v*/s3/**").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.GET, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.PUT, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.DELETE, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.PATCH, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
                         .anyRequest().authenticated()
                 );
         http
@@ -157,11 +154,11 @@ public class SecurityConfig {
         //bucket 필터 추가
         http
                 .addFilterBefore(new RateLimitFilter(proxyManager, redisTemplate)
-                , UsernamePasswordAuthenticationFilter.class);
+                        , UsernamePasswordAuthenticationFilter.class);
 
         // 커스텀 필터 추가
         http
-                .addFilterBefore(new JWTFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JWTFilter(userDetailsService), UsernamePasswordAuthenticationFilter.class);
 
 //        http
 //                .addFilterBefore(new LoginFilter(authenticationManager(authenticationConfiguration), loginSuccessHandler), UsernamePasswordAuthenticationFilter.class);

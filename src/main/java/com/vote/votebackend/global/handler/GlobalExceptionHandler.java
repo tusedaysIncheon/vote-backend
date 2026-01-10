@@ -1,4 +1,4 @@
-package com.vote.votebackend.handler;
+package com.vote.votebackend.global.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

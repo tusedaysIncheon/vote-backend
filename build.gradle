@@ -47,6 +47,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'com.bucket4j:bucket4j-core:8.7.0'
     implementation 'com.bucket4j:bucket4j-redis:8.7.0'
+    // AWS S3 SDK (v2)
+    implementation platform('software.amazon.awssdk:bom:2.21.1')
+    implementation 'software.amazon.awssdk:s3'
 }
 
 tasks.named('test') {
