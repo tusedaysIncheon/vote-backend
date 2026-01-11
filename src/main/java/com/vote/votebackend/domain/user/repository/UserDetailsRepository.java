@@ -14,4 +14,5 @@ public interface UserDetailsRepository extends JpaRepository<UserDetailsEntity,L
 
     boolean existsByNickname(String nickname);
 
+    UserEntity user(UserEntity user);
 }

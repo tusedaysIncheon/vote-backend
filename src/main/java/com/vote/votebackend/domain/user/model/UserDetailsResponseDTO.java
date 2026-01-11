@@ -5,6 +5,8 @@ import com.vote.votebackend.domain.user.entity.enums.Gender;
 import com.vote.votebackend.domain.user.entity.enums.MBTI;
 import com.vote.votebackend.domain.user.entity.enums.Region;
 import com.vote.votebackend.domain.user.entity.enums.RelationshipStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +14,8 @@ import java.time.Year;
 
 
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class UserDetailsResponseDTO {
 

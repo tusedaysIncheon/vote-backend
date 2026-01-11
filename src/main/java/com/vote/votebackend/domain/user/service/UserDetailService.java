@@ -2,6 +2,7 @@ package com.vote.votebackend.domain.user.service;
 
 import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
 import com.vote.votebackend.domain.user.entity.UserEntity;
+import com.vote.votebackend.domain.user.model.UserDetailsLoadDTO;
 import com.vote.votebackend.domain.user.model.UserDetailsRequestDTO;
 import com.vote.votebackend.domain.user.model.UserDetailsResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserDetailsRepository;
@@ -78,4 +79,8 @@ public class UserDetailService {
     public Boolean existNickname(String nickname) {
         return userDetailsRepository.existsByNickname(nickname);
     }
+
+
+
+
 }

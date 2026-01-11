@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -161,4 +162,15 @@ public class UserController {
 
         return ResponseEntity.ok(true);
     }
+
+    @Operation(summary = "유저 총 정보", description = "한 유저모든정보 불러오는 API")
+    @GetMapping("/load-info")
+    public ResponseEntity<UserDetailsLoadDTO> loadUserInfo(
+            @AuthenticationPrincipal CustomUserDetails user
+    ){
+        return ResponseEntity.ok(userService.getUserDetails(user.getUsername()));
+    }
+
+
+
 }

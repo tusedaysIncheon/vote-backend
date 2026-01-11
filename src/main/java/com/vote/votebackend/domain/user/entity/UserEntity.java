@@ -2,6 +2,7 @@ package com.vote.votebackend.domain.user.entity;
 
 import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
+import com.vote.votebackend.domain.user.model.UserDetailsLoadDTO;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -60,5 +62,6 @@ public class UserEntity {
     public void updateUser(UserRequestDTO dto) {
         this.email = dto.getEmail();
     }
+
 
 }
