@@ -64,13 +64,10 @@ public class UserDetailService {
         }
     }
 
-    public UserDetailsResponseDTO getProfile(String username){
+    public UserDetailsResponseDTO getProfile(Long userId) {
 
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 사용자입니다."));
-
-        UserDetailsEntity userDetails = userDetailsRepository.findByUser(user)
-                .orElseThrow(()->new IllegalArgumentException("프로필이 설정되지 않았습니다."));
+        UserDetailsEntity userDetails = userDetailsRepository.findProfilebyUserId(userId)
+                .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         return new UserDetailsResponseDTO(userDetails);
 
