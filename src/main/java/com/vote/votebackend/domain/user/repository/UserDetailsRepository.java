@@ -7,11 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 
-public interface UserDetailsRepository extends JpaRepository<UserDetailsEntity,Long> {
+public interface UserDetailsRepository extends JpaRepository<UserDetailsEntity,Long>, UserDetailsRepositoryCustom  {
 
     //ID-> 상세정보
     Optional<UserDetailsEntity> findByUser(UserEntity user);
 
     boolean existsByNickname(String nickname);
 
+    UserEntity user(UserEntity user);
 }

@@ -1,12 +1,15 @@
 package com.vote.votebackend.domain.user.service;
 
+import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
+import com.vote.votebackend.domain.user.model.UserDetailsLoadDTO;
+import com.vote.votebackend.domain.user.model.UserResponseDTO;
+import com.vote.votebackend.domain.user.repository.UserDetailsRepository;
 import com.vote.votebackend.global.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
 import com.vote.votebackend.domain.user.model.CustomOAuth2User;
 import com.vote.votebackend.domain.user.model.UserRequestDTO;
-import com.vote.votebackend.domain.user.model.UserResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -38,8 +41,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RedisService redisService;
-
-
+    private final UserDetailsRepository userDetailsRepository;
 
 
     //자체 로그인 회원 가입 (존재 여부 체크)
@@ -214,5 +216,15 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         return new UserResponseDTO(username, entity.getIsSocial(),  entity.getEmail());
     }
 
+    //유저 전체정보 조회
+    @Transactional(readOnly = true)
+    public UserDetailsLoadDTO getUserDetails(String username){
+        UserEntity userEntity = userRepository.findByUsernameAndIsLock(username, false)
+                .orElseThrow(() -> new UsernameNotFoundException("유저 없음"));
+
+        UserDetailsEntity details = userDetailsRepository.findByUser(userEntity).orElse(null);
+
+        return UserDetailsLoadDTO.from(userEntity, details);
+    }
 
 }

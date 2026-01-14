@@ -39,10 +39,10 @@ public class UserDetailsController {
     public ResponseEntity<UserDetailsResponseDTO> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails user){
 
-        String username = user.getUsername();
-        log.info("get user details : {}", username);
+        Long userId = user.getUserId();
+        log.info("get user details : {}", userId);
 
-        UserDetailsResponseDTO profile =  userDetailService.getProfile(username);
+        UserDetailsResponseDTO profile =  userDetailService.getProfile(userId);
         return  ResponseEntity.ok(profile);
     }
 
