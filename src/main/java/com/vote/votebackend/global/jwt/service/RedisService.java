@@ -63,7 +63,6 @@ public class RedisService {
      */
     public void deleteAllRefreshTokens(String username) {
         String key = "RT:" + username;
-
         // Hash Key 자체를 삭제하면 연결된 모든 Field(기기) 정보가 삭제됨
         redisTemplate.delete(key);
     }

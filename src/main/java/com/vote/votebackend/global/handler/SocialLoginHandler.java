@@ -21,21 +21,22 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
     private final JwtService jwtService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException {
 
-        //username , role 파싱
+        // username , role 파싱
         String username = authentication.getName();
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
         String deviceId = "unknown-device-id";
 
-        //JWT 발급
+        // JWT 발급
         String refreshToken = JWTUtil.createJWT(username, "ROLE_" + role, false);
 
-        //발급한 리프레쉬 토큰 DB 테이블 저장
+        // 발급한 리프레쉬 토큰 DB 테이블 저장
         jwtService.addRefresh(username, refreshToken, deviceId);
 
-        //응답
+        // 응답
         Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
@@ -43,8 +44,7 @@ public class SocialLoginHandler implements AuthenticationSuccessHandler {
         refreshCookie.setMaxAge(60);
 
         response.addCookie(refreshCookie); // 10초 (프론트에서 발급 후 바로 헤더 전환 예정)
-        response.sendRedirect("http://localhost:5173/cookie"); //프론트 주소 -> 포트번호 확인후 변경!
-
+        response.sendRedirect("http://localhost:5173/cookie"); // 프론트 주소 -> 포트번호 확인후 변경!
 
     }
 }

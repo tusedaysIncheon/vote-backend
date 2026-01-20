@@ -27,14 +27,14 @@ public class JwtService {
     @Transactional
     public JWTResponseDTO cookie2token(HttpServletResponse response, HttpServletRequest request, String deviceId) {
 
-        //쿠키가 있는지 검증
+        // 쿠키가 있는지 검증
         String refreshToken = null;
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             throw new RuntimeException("쿠키가 존재하지 않습니다.");
         }
 
-        //자바에서 리터럴 비교 시 문자열이 앞으로 오게해서 비교해야함 -> NPE 방지
+        // 자바에서 리터럴 비교 시 문자열이 앞으로 오게해서 비교해야함 -> NPE 방지
         for (Cookie cookie : cookies) {
             if ("refresh_token".equals(cookie.getName()) || "refreshToken".equals(cookie.getName())) {
                 refreshToken = cookie.getValue();
@@ -46,7 +46,7 @@ public class JwtService {
             throw new RuntimeException("리프레쉬 토큰이 확인되지 않습니다.");
         }
 
-        //refresh 토큰 검증
+        // refresh 토큰 검증
         Boolean isValid = JWTUtil.isValid(refreshToken, false);
         if (!isValid) {
             throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
@@ -61,20 +61,22 @@ public class JwtService {
 
         String savedToken = redisService.getRefreshToken(username, deviceId);
 
-        if(savedToken == null) {
+        if (savedToken == null) {
             savedToken = redisService.getRefreshToken(username, "unknown-device-id");
         }
 
-        if( savedToken == null || !savedToken.equals(refreshToken) ) {
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
             throw new RuntimeException("유효하지 않거나 만료된 토큰입니다.");
         }
 
         String newAccessToken = createAccessToken(username);
-        String newRefreshToken = createRefreshToken(username);
+        String newRefreshToken = createRefreshToken(username); // Rotation Enable
 
-        redisService.setRefreshToken(username,deviceId,newRefreshToken,refreshTokenExpirationMs);
+        redisService.setRefreshToken(username, deviceId, newRefreshToken, refreshTokenExpirationMs);
 
-        redisService.deleteRefreshToken(username,"unknown-device-id");
+        if (!"unknown-device-id".equals(deviceId)) {
+            redisService.deleteRefreshToken(username, "unknown-device-id");
+        }
 
         setRefreshCookie(response, newRefreshToken);
 
@@ -89,38 +91,36 @@ public class JwtService {
 
     }
 
-
-
     // Refresh 토큰으로 Access 토큰 재발급 로직 (Rotate 포함)
     @Transactional
     public JWTResponseDTO refreshRotate(RefreshRequestDTO dto, HttpServletResponse response, String deviceId) {
 
         String refreshToken = dto.getRefreshToken();
 
-        if(!JWTUtil.isValid(refreshToken, false)){
+        if (!JWTUtil.isValid(refreshToken, false)) {
             throw new RuntimeException("유효하지 않은 리프레쉬토큰입니다.");
         }
 
         String username = JWTUtil.getUsername(refreshToken);
         String role = JWTUtil.getRole(refreshToken);
 
-        //redis 검증
+        // redis 검증
         String savedToken = redisService.getRefreshToken(username, deviceId);
 
-        if(savedToken == null){
+        if (savedToken == null) {
             throw new RuntimeException("만료된 세션입니다. 다시 로그인해주세요");
         }
 
-        if(!savedToken.equals(refreshToken)){
-            //토큰 정보 불일치 (보안 경고)
-            //refreshToken 삭제 / 강제 로그아웃
+        if (!savedToken.equals(refreshToken)) {
+            // 토큰 정보 불일치 (보안 경고)
+            // refreshToken 삭제 / 강제 로그아웃
             throw new RuntimeException("토큰 정보가 일치하지않습니다");
         }
 
         String newAccessToken = createAccessToken(username);
         String newRefreshToken = createRefreshToken(username);
 
-        redisService.setRefreshToken(username,deviceId,newRefreshToken,refreshTokenExpirationMs);
+        redisService.setRefreshToken(username, deviceId, newRefreshToken, refreshTokenExpirationMs);
 
         setRefreshCookie(response, newRefreshToken);
 
@@ -131,8 +131,8 @@ public class JwtService {
     @Transactional
     public void addRefresh(String username, String refreshToken, String deviceId) {
 
-        //Redis 는 set 하면 덮어써짐 // -> 삭제 로직 불필요
-        redisService.setRefreshToken(username,deviceId,refreshToken,refreshTokenExpirationMs);
+        // Redis 는 set 하면 덮어써짐 // -> 삭제 로직 불필요
+        redisService.setRefreshToken(username, deviceId, refreshToken, refreshTokenExpirationMs);
 
     }
 
@@ -146,7 +146,7 @@ public class JwtService {
         return JWTUtil.createJWT(username, role, true);
     }
 
-    //로그인 시 refresh 토큰 발급 메소드
+    // 로그인 시 refresh 토큰 발급 메소드
     public String createRefreshToken(String username) {
         String role = userRepository.findRoleTypeByUsername(username)
                 .map(Enum::name)
@@ -160,7 +160,7 @@ public class JwtService {
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge((int)(refreshTokenExpirationMs / 1000));
+        refreshCookie.setMaxAge((int) (refreshTokenExpirationMs / 1000));
         response.addCookie(refreshCookie);
     }
 
