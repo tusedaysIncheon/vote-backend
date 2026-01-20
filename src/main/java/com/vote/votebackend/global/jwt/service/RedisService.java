@@ -2,11 +2,9 @@ package com.vote.votebackend.global.jwt.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -15,47 +13,59 @@ public class RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     /**
-     * 리프레시 토큰 저장 (Save)
-     * @param username 사용자 아이디
-     * @param deviceId 기기 식별자 (UUID)
-     * @param refreshToken 저장할 토큰 값
-     * @param durationInMillis 토큰 유효 시간 (밀리초)
+     * 리프레시 토큰 저장 (Save) - Hash 구조 변경
+     * Key: RT:username
+     * Field: deviceId
+     * Value: refreshToken
+     * 
+     * @param username         사용자 아이디
+     * @param deviceId         기기 식별자 (UUID)
+     * @param refreshToken     저장할 토큰 값
+     * @param durationInMillis 토큰 유효 시간 (밀리초) - Key 만료 시간으로 사용
      */
-    public void setRefreshToken(String username,String deviceId, String refreshToken, Long durationInMillis){
+    public void setRefreshToken(String username, String deviceId, String refreshToken, Long durationInMillis) {
+        String key = "RT:" + username;
 
-        String key = "RT:" + username + ":" + deviceId;
+        // Hash에 저장 (Key, Field, Value)
+        redisTemplate.opsForHash().put(key, deviceId, refreshToken);
 
-        ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
-        valueOperations.set(key, refreshToken, Duration.ofMillis(durationInMillis));
-
+        // Key 전체에 대한 만료 시간 설정 (갱신)
+        // 사용자가 활동할 때마다 세션 만료 시간이 연장됨
+        redisTemplate.expire(key, Duration.ofMillis(durationInMillis));
     }
 
     /**
      * 리프레시 토큰 조회 (Get)
+     * 
      * @return 저장된 토큰 값 (없으면 null)
      */
-    public String getRefreshToken(String username, String deviceId){
-        String key = "RT:" + username + ":" + deviceId;
+    public String getRefreshToken(String username, String deviceId) {
+        String key = "RT:" + username;
 
-        return (String)redisTemplate.opsForValue().get(key);
+        // Hash에서 Field(deviceId)로 조회
+        return (String) redisTemplate.opsForHash().get(key, deviceId);
     }
 
     /**
      * 리프레시 토큰 삭제 (Delete)
      * 로그아웃 시 사용
      */
-    public void deleteRefreshToken(String username, String deviceId){
-        String key = "RT:" + username + ":" + deviceId;
+    public void deleteRefreshToken(String username, String deviceId) {
+        String key = "RT:" + username;
 
-        redisTemplate.delete(key);
+        // Hash에서 특정 Field(deviceId)만 삭제
+        redisTemplate.opsForHash().delete(key, deviceId);
     }
 
-    public void deleteAllRefreshTokens(String username){
-        Set<String> keys =  redisTemplate.keys("RT:" + username + ":*");
+    /**
+     * 해당 유저의 모든 리프레시 토큰 삭제
+     * 비밀번호 변경, 회원 탈퇴, 전체 로그아웃 등
+     */
+    public void deleteAllRefreshTokens(String username) {
+        String key = "RT:" + username;
 
-        if ( keys != null && !keys.isEmpty() ){
-            redisTemplate.delete(keys);
-        }
+        // Hash Key 자체를 삭제하면 연결된 모든 Field(기기) 정보가 삭제됨
+        redisTemplate.delete(key);
     }
 
 }
