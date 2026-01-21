@@ -1,12 +1,11 @@
-package com.vote.votebackend.api;
+package com.vote.votebackend.domain.user.controller;
 
 
-import com.vote.votebackend.domain.user.model.UserDetailsRequestDTO;
-import com.vote.votebackend.domain.user.model.UserDetailsResponseDTO;
+import com.vote.votebackend.domain.user.dto.UserDetailsRequestDTO;
+import com.vote.votebackend.domain.user.dto.UserDetailsResponseDTO;
 import com.vote.votebackend.domain.user.service.UserDetailService;
 import com.vote.votebackend.global.security.custom.CustomUserDetails;
 import jakarta.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

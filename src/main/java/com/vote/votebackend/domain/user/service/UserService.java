@@ -1,15 +1,15 @@
 package com.vote.votebackend.domain.user.service;
 
 import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
-import com.vote.votebackend.domain.user.model.UserDetailsLoadDTO;
-import com.vote.votebackend.domain.user.model.UserResponseDTO;
+import com.vote.votebackend.domain.user.dto.UserDetailsLoadDTO;
+import com.vote.votebackend.domain.user.dto.UserResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserDetailsRepository;
 import com.vote.votebackend.global.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.enums.SocialProviderType;
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.enums.UserRoleType;
-import com.vote.votebackend.domain.user.model.CustomOAuth2User;
-import com.vote.votebackend.domain.user.model.UserRequestDTO;
+import com.vote.votebackend.domain.user.dto.CustomOAuth2User;
+import com.vote.votebackend.domain.user.dto.UserRequestDTO;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;

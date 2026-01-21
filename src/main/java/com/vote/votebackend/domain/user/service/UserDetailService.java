@@ -2,17 +2,13 @@ package com.vote.votebackend.domain.user.service;
 
 import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
 import com.vote.votebackend.domain.user.entity.UserEntity;
-import com.vote.votebackend.domain.user.model.UserDetailsLoadDTO;
-import com.vote.votebackend.domain.user.model.UserDetailsRequestDTO;
-import com.vote.votebackend.domain.user.model.UserDetailsResponseDTO;
+import com.vote.votebackend.domain.user.dto.UserDetailsRequestDTO;
+import com.vote.votebackend.domain.user.dto.UserDetailsResponseDTO;
 import com.vote.votebackend.domain.user.repository.UserDetailsRepository;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

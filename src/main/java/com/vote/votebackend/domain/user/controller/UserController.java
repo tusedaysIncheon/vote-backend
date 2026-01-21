@@ -1,9 +1,9 @@
-package com.vote.votebackend.api;
+package com.vote.votebackend.domain.user.controller;
 
 import com.vote.votebackend.global.jwt.service.JwtService;
 import com.vote.votebackend.global.jwt.service.RedisService;
 import com.vote.votebackend.domain.user.entity.UserEntity;
-import com.vote.votebackend.domain.user.model.*;
+import com.vote.votebackend.domain.user.dto.*;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import com.vote.votebackend.domain.user.service.UserService;
 import com.vote.votebackend.global.security.custom.CustomUserDetails;

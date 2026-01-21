@@ -1,4 +1,4 @@
-package com.vote.votebackend.domain.user.model;
+package com.vote.votebackend.domain.user.dto;
 
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
