@@ -133,7 +133,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/jwt/refresh", "/jwt/exchange").permitAll()
                         .requestMatchers(HttpMethod.POST, "/v*/user/exist", "/v*/user", "/v*/user/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v*/s3/**").hasRole(UserRoleType.USER.name())
+                        .requestMatchers(HttpMethod.POST, "/v*/s3/**", "/v*/vote/**").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.GET, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.PUT, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())
                         .requestMatchers(HttpMethod.DELETE, "/v*/user", "/v*/user-details").hasRole(UserRoleType.USER.name())

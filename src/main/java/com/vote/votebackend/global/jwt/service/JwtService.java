@@ -31,7 +31,7 @@ public class JwtService {
         String refreshToken = null;
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            throw new RuntimeException("쿠키가 존재하지 않습니다.");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("쿠키가 존재하지 않습니다.");
         }
 
         // 자바에서 리터럴 비교 시 문자열이 앞으로 오게해서 비교해야함 -> NPE 방지
@@ -43,13 +43,13 @@ public class JwtService {
         }
 
         if (refreshToken == null) {
-            throw new RuntimeException("리프레쉬 토큰이 확인되지 않습니다.");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("리프레쉬 토큰이 확인되지 않습니다.");
         }
 
         // refresh 토큰 검증
         Boolean isValid = JWTUtil.isValid(refreshToken, false);
         if (!isValid) {
-            throw new RuntimeException("유효하지 않은 리프레쉬 토큰입니다.");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("유효하지 않은 리프레쉬 토큰입니다.");
         }
 
         String username = JWTUtil.getUsername(refreshToken);
@@ -66,7 +66,7 @@ public class JwtService {
         }
 
         if (savedToken == null || !savedToken.equals(refreshToken)) {
-            throw new RuntimeException("유효하지 않거나 만료된 토큰입니다.");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("유효하지 않거나 만료된 토큰입니다.");
         }
 
         String newAccessToken = createAccessToken(username);
@@ -98,7 +98,7 @@ public class JwtService {
         String refreshToken = dto.getRefreshToken();
 
         if (!JWTUtil.isValid(refreshToken, false)) {
-            throw new RuntimeException("유효하지 않은 리프레쉬토큰입니다.");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("유효하지 않은 리프레쉬토큰입니다.");
         }
 
         String username = JWTUtil.getUsername(refreshToken);
@@ -108,13 +108,13 @@ public class JwtService {
         String savedToken = redisService.getRefreshToken(username, deviceId);
 
         if (savedToken == null) {
-            throw new RuntimeException("만료된 세션입니다. 다시 로그인해주세요");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("만료된 세션입니다. 다시 로그인해주세요");
         }
 
         if (!savedToken.equals(refreshToken)) {
             // 토큰 정보 불일치 (보안 경고)
             // refreshToken 삭제 / 강제 로그아웃
-            throw new RuntimeException("토큰 정보가 일치하지않습니다");
+            throw new com.vote.votebackend.global.exception.InvalidTokenException("토큰 정보가 일치하지않습니다");
         }
 
         String newAccessToken = createAccessToken(username);

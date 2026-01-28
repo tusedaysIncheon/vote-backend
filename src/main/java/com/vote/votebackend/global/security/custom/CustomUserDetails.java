@@ -40,7 +40,7 @@ public class CustomUserDetails implements UserDetails, Serializable {
 
     @Override
     public String getPassword() {
-        return userEntity.getPassword();
+        return null;
     }
 
     @Override
@@ -80,4 +80,5 @@ public class CustomUserDetails implements UserDetails, Serializable {
     public int hashCode() {
         return Objects.hash(getUserId());
     }
+
 }

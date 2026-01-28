@@ -33,6 +33,9 @@ public class VoteCommentEntity {
     @Column(nullable = false, length = 1000)
     private String content;
 
+    @Column
+    private int likeCount = 0;
+
     @CreatedDate
     private LocalDateTime createdDate;
 

@@ -56,6 +56,9 @@ public class UserEntity {
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
 
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true) // 혹은 EAGER
+    private UserDetailsEntity userDetails;
+
     //일반 회원정보 업데이트 용
     public void updateUser(UserRequestDTO dto) {
         this.email = dto.getEmail();

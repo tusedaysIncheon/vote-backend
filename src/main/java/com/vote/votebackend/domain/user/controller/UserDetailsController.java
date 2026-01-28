@@ -1,15 +1,13 @@
 package com.vote.votebackend.domain.user.controller;
 
-
 import com.vote.votebackend.domain.user.dto.UserDetailsRequestDTO;
 import com.vote.votebackend.domain.user.dto.UserDetailsResponseDTO;
 import com.vote.votebackend.domain.user.service.UserDetailService;
-import com.vote.votebackend.global.security.custom.CustomUserDetails;
+import com.vote.votebackend.global.util.ApiResponse;
+import com.vote.votebackend.global.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,34 +19,41 @@ public class UserDetailsController {
     private final UserDetailService userDetailService;
 
     @PostMapping
-    public ResponseEntity<String> saveUserDetails(
-            @AuthenticationPrincipal CustomUserDetails user,
-            @Valid @RequestBody UserDetailsRequestDTO dto
-            ){
+    public ApiResponse<String> saveUserDetails(
+            @Valid @RequestBody UserDetailsRequestDTO dto) {
+        // @AuthenticationPrincipal CustomUserDetails user removed
 
-        String username = user.getUsername();
+        String username = SecurityUtils.getCurrentUser().getUsername();
+        if (username == null) {
+            throw new IllegalArgumentException("인증 정보가 없습니다.");
+        }
+
         log.info("save user details : {}", username);
 
         userDetailService.saveUserDetails(username, dto);
 
-        return ResponseEntity.ok("프로필이 성공적으로 저장되었습니다.");
+        return ApiResponse.ok("프로필이 성공적으로 저장되었습니다.");
     }
 
     @GetMapping
-    public ResponseEntity<UserDetailsResponseDTO> getMyInfo(
-            @AuthenticationPrincipal CustomUserDetails user){
+    public ApiResponse<UserDetailsResponseDTO> getMyInfo() {
+        // @AuthenticationPrincipal CustomUserDetails user removed
 
-        Long userId = user.getUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("인증 정보가 없습니다.");
+        }
+
         log.info("get user details : {}", userId);
 
-        UserDetailsResponseDTO profile =  userDetailService.getProfile(userId);
-        return  ResponseEntity.ok(profile);
+        UserDetailsResponseDTO profile = userDetailService.getProfile(userId);
+        return ApiResponse.ok(profile);
     }
 
     @GetMapping("/exist-nickname")
-    public ResponseEntity<Boolean> existNickname(@RequestParam String nickname){
+    public ApiResponse<Boolean> existNickname(@RequestParam String nickname) {
         log.info("exist nickname : {}", nickname);
-        return ResponseEntity.ok(userDetailService.existNickname(nickname));
+        return ApiResponse.ok(userDetailService.existNickname(nickname));
 
     }
 

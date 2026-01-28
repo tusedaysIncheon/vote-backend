@@ -3,11 +3,11 @@ package com.vote.votebackend.global.jwt.api;
 import com.vote.votebackend.global.jwt.model.JWTResponseDTO;
 import com.vote.votebackend.global.jwt.model.RefreshRequestDTO;
 import com.vote.votebackend.global.jwt.service.JwtService;
+import com.vote.votebackend.global.util.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +22,11 @@ public class JWTController {
 
     // 소셜 로그인 방식: 쿠키 -> JWT 교환
     @PostMapping(value = "/jwt/exchange")
-    public JWTResponseDTO jwtExchangeAPI(
+    public ApiResponse<JWTResponseDTO> jwtExchangeAPI(
             HttpServletResponse response,
             HttpServletRequest request,
             // Body가 없어도 에러나지 않게 required = false 설정
-            @RequestBody(required = false) Map<String, String> body
-    ) {
+            @RequestBody(required = false) Map<String, String> body) {
         String deviceId = "unknown-device-id"; // 기본값 설정
 
         // Body가 있고, 그 안에 deviceId가 있을 때만 덮어쓰기
@@ -35,17 +34,16 @@ public class JWTController {
             deviceId = body.get("deviceId");
         }
 
-        return jwtService.cookie2token(response, request, deviceId);
+        return ApiResponse.ok(jwtService.cookie2token(response, request, deviceId));
     }
 
     // Refresh 토큰으로 Access 토큰 재발급
     @PostMapping(value = "/jwt/refresh")
-    public ResponseEntity<?> jwtRefreshAPI(
+    public ApiResponse<?> jwtRefreshAPI(
             HttpServletRequest request,
             HttpServletResponse response,
             // Body가 비어있어도 괜찮도록 required = false
-            @RequestBody(required = false) Map<String, String> body
-    ) {
+            @RequestBody(required = false) Map<String, String> body) {
         String refreshToken = null;
 
         // 1. 쿠키에서 리프레시 토큰 찾기
@@ -63,7 +61,10 @@ public class JWTController {
         // 2. 쿠키 값 검증 (없으면 게스트)
         if (refreshToken == null || refreshToken.isBlank()) {
 
-            return ResponseEntity.ok().body(Map.of("message","Guest Mode","accessToken",""));
+            // Guest Mode
+            // Assuming returning a Map equivalent in ApiResponse logic or just success with
+            // data
+            return ApiResponse.ok(Map.of("message", "Guest Mode", "accessToken", ""));
         }
 
         // 3. deviceId 처리 (Null Safe 하게 변경)
@@ -80,9 +81,9 @@ public class JWTController {
         // 5. 토큰 재발급 진행
         try {
             JWTResponseDTO newToken = jwtService.refreshRotate(dto, response, deviceId);
-            return ResponseEntity.ok(newToken);
+            return ApiResponse.ok(newToken);
         } catch (Exception e) {
-            return ResponseEntity.status(400).body("리프레쉬 토큰 확인안됨");
+            return ApiResponse.fail("400", "리프레쉬 토큰 확인안됨");
         }
 
     }

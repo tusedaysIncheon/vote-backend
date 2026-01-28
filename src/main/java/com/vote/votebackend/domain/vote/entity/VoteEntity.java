@@ -65,8 +65,17 @@ public class VoteEntity {
     public void increaseCommentCount() {
         this.commentCount++;
     }
-
     public void increaseTotalVoteCount() {
         this.totalVoteCount++;
+    }
+
+    // 비즈니스 로직 : 카운트 감소
+    public void decreaseCommentCount(){this.commentCount--;}
+    public void decreaseTotalVoteCount(){this.totalVoteCount--;}
+
+    //투표 옵션 Id 부여
+    public void addOption(VoteOptionEntity option) {
+        this.options.add(option);
+        option.setVote(this);
     }
 }
