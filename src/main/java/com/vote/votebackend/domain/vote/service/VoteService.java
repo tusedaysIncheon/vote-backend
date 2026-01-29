@@ -11,6 +11,8 @@ import com.vote.votebackend.domain.vote.entity.VoteOptionEntity;
 import com.vote.votebackend.domain.vote.repository.VoteRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,5 +47,12 @@ public class VoteService {
         VoteEntity saveVote = voteRepository.save(voteEntity);
 
         return VoteResponseDTO.toDTO(saveVote);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<VoteResponseDTO> getFeedList(Pageable pageable) {
+        Page<VoteEntity> votePage = voteRepository.findRecommendedVotes(pageable);
+
+        return votePage.map(VoteResponseDTO::toDTO);
     }
 }

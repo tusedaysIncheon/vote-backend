@@ -1,6 +1,5 @@
 package com.vote.votebackend.domain.vote.controller;
 
-import com.vote.votebackend.domain.user.entity.UserEntity;
 import com.vote.votebackend.domain.vote.dto.VoteRequestDTO;
 import com.vote.votebackend.domain.vote.dto.VoteResponseDTO;
 import com.vote.votebackend.domain.vote.service.VoteService;
@@ -12,10 +11,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -39,6 +39,18 @@ public class VoteController {
         VoteResponseDTO voteResponse = voteService.addVote(user,dto);
 
         return ApiResponse.created(voteResponse);
+    }
+
+    @GetMapping
+    @Operation(summary = "투표 피드 조회", description = "Gravity 알고리즘으로 정렬된 투표 목록을 무한 스크롤 방식으로 조회합니다.")
+    public ApiResponse<List<VoteResponseDTO>> loadFeed(
+            @RequestParam(defaultValue = "0") int page, // 몇 번째 페이지인지 (0부터 시작)
+            @RequestParam(defaultValue = "10") int size // 한 번에 몇 개 가져올지
+    ){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<VoteResponseDTO> votePage = voteService.getFeedList(pageable);
+
+        return ApiResponse.ok(votePage.getContent());
     }
 
 }
