@@ -26,6 +26,8 @@ public class VoteRepositoryCustomImpl implements  VoteRepositoryCustom {
 
         LocalDateTime now = LocalDateTime.now();
 
+        LocalDateTime cutOff = now.minusHours(6);
+
         //gravity 알고리즘 수식 정의
         // totalVote * 2 + commentCount *5 + 10 / POWER(시간차 + 2, 1.5)
 
@@ -44,7 +46,7 @@ public class VoteRepositoryCustomImpl implements  VoteRepositoryCustom {
         List<VoteEntity> content = queryFactory
                 .selectFrom(voteEntity)
                 .leftJoin(voteEntity.writer, userEntity).fetchJoin()
-                .where(voteEntity.endDate.after(now))
+                .where(voteEntity.endDate.gt(cutOff))
                 .orderBy(gravityScore.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -53,7 +55,7 @@ public class VoteRepositoryCustomImpl implements  VoteRepositoryCustom {
         Long total = queryFactory
                 .select(voteEntity.count())
                 .from(voteEntity)
-                .where(voteEntity.endDate.after(now))
+                .where(voteEntity.endDate.gt(cutOff))
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0);

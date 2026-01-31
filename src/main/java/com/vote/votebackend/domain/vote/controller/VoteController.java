@@ -1,5 +1,6 @@
 package com.vote.votebackend.domain.vote.controller;
 
+import com.vote.votebackend.domain.vote.dto.VoteInteractDTO;
 import com.vote.votebackend.domain.vote.dto.VoteRequestDTO;
 import com.vote.votebackend.domain.vote.dto.VoteResponseDTO;
 import com.vote.votebackend.domain.vote.service.VoteService;
@@ -36,7 +37,7 @@ public class VoteController {
             throw new InvalidTokenException("로그인이 필요한 서비스입니다.");
         }
 
-        VoteResponseDTO voteResponse = voteService.addVote(user,dto);
+        VoteResponseDTO voteResponse = voteService.createVote(user,dto);
 
         return ApiResponse.created(voteResponse);
     }
@@ -51,6 +52,36 @@ public class VoteController {
         Page<VoteResponseDTO> votePage = voteService.getFeedList(pageable);
 
         return ApiResponse.ok(votePage.getContent());
+    }
+
+    @GetMapping("/{voteId}")
+    @Operation(summary = "투표 피드 상세 조회", description = "선택된 투표 상세조회")
+    public ApiResponse<VoteResponseDTO> loadVoteDetails(@PathVariable Long voteId) {
+
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        VoteResponseDTO voteResponse = voteService.getVoteDetails(voteId, userId);
+
+        return ApiResponse.ok(voteResponse);
+
+    }
+
+    @PostMapping("/{voteId}")
+    @Operation(summary = "투표 옵션 선택", description = "투표의 옵션 선택")
+    public ApiResponse<Void> selectOption(
+            @PathVariable Long voteId,
+            @RequestBody @Valid VoteInteractDTO interactDTO
+            ){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        if (userId == null) {
+            throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
+
+        voteService.castVote(voteId,userId, interactDTO.getOptionId());
+
+        return ApiResponse.created(null);
+
     }
 
 }

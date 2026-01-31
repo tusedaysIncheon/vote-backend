@@ -1,5 +1,6 @@
 package com.vote.votebackend.domain.vote.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.vote.votebackend.domain.user.dto.WriterDTO;
 import com.vote.votebackend.domain.user.entity.UserDetailsEntity;
 import com.vote.votebackend.domain.user.entity.UserEntity;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class VoteResponseDTO {
 
    private Long id;
@@ -28,6 +30,7 @@ public class VoteResponseDTO {
 
    private Boolean isVoted;
    private Long votedOptionId;
+   private boolean isClosed;
 
    private List<VoteOptionResponseDTO> options;
 
@@ -36,6 +39,8 @@ public class VoteResponseDTO {
 
          UserEntity writer = saveVote.getWriter();
          UserDetailsEntity userDetails = writer.getUserDetails();
+
+         boolean isClosedNow = LocalDateTime.now().isAfter(saveVote.getEndDate());
 
          return VoteResponseDTO.builder()
                  .id(saveVote.getId())
@@ -51,11 +56,17 @@ public class VoteResponseDTO {
                  .endDate(saveVote.getEndDate())
                  .totalVote(saveVote.getTotalVoteCount())
                  .commentCount(saveVote.getCommentCount())
+                 .isClosed(isClosedNow)
                  .isVoted(false)
                  .votedOptionId(null)
                  .options(saveVote.getOptions().stream().map(VoteOptionResponseDTO::toDTO)
                          .collect(Collectors.toList()))
                  .build();
 
+    }
+
+    public void setVoteStatus(boolean isVoted, Long votedOptionId) {
+        this.isVoted = isVoted;
+        this.votedOptionId = votedOptionId;
     }
 }

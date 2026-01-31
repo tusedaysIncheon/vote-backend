@@ -78,4 +78,8 @@ public class VoteEntity {
         this.options.add(option);
         option.setVote(this);
     }
+    //투표 마감 확인
+    public boolean isClosed() {
+        return LocalDateTime.now().isAfter(this.endDate);
+    }
 }

@@ -41,7 +41,7 @@ public class VoteRecordEntity {
     // 무엇을 선택했는지 (통계용)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vote_option_id", nullable = false)
-    private VoteOptionEntity selectedOption;
+    private VoteOptionEntity voteOption;
 
     @CreatedDate
     private LocalDateTime createdDate;
