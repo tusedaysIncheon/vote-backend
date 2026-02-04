@@ -65,6 +65,34 @@ public class VoteResponseDTO {
 
     }
 
+    public static VoteResponseDTO merge(VoteInfoDTO info, VoteStatsDTO stats) {
+
+        // 1. 옵션별 카운트 매핑 (Stats에서 가져와서 Info에 덮어쓰기)
+        List<VoteOptionResponseDTO> mergedOptions = info.getOptions().stream()
+                .map(opt -> VoteOptionResponseDTO.builder()
+                        .id(opt.getId())
+                        .content(opt.getContent())
+                        .imageUrl(opt.getImageUrl())
+                        .count(stats.getOptionCount().getOrDefault(opt.getId(), 0L)) // ⭐ 여기가 핵심! Redis 카운트 사용
+                        .build())
+                .collect(Collectors.toList());
+        // 2. 최종 DTO 빌드
+        return VoteResponseDTO.builder()
+                .id(info.getId())
+                .writer(info.getWriter())
+                .content(info.getContent())
+                .imageUrl(info.getImageUrl())
+                .createdAt(LocalDateTime.now()) // 혹은 Info에 추가
+                .endDate(info.getEndDate())
+                .isClosed(LocalDateTime.now().isAfter(info.getEndDate()))
+
+                // 통계 데이터 주입
+                .totalVote(stats.getTotalVoteCount())
+                // .commentCount(0L) // 댓글 수는 별도 조회 필요하면 처리
+                .options(mergedOptions)
+                .build();
+    }
+
     public void setVoteStatus(boolean isVoted, Long votedOptionId) {
         this.isVoted = isVoted;
         this.votedOptionId = votedOptionId;

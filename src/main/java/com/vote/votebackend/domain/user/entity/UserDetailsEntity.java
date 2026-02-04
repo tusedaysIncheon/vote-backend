@@ -71,6 +71,18 @@ public class UserDetailsEntity {
         if (birthYear != null) this.birthYear = birthYear;
         if (gender != null) this.gender = gender;
     }
+
+    //생년월일로 현재 나이 추적 메서드
+
+    public Integer getAge(){
+        if(this.birthYear == null) return 0;
+        return java.time.Year.now().getValue() - this.birthYear;
+    }
+
+    public String getAgeGroup(){
+        int age = getAge();
+        return (age / 10 * 10 ) + "s";
+    }
 }
 
 
