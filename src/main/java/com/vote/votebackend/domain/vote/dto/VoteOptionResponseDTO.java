@@ -1,7 +1,6 @@
 package com.vote.votebackend.domain.vote.dto;
 
 import com.vote.votebackend.domain.vote.entity.VoteOptionEntity;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +16,7 @@ public class VoteOptionResponseDTO {
     private String content;
     private String imageUrl;
     private Long count;
+    private VoteOptionStatusDTO status;
 
     public static VoteOptionResponseDTO toDTO(VoteOptionEntity voteOptionEntity) {
         return VoteOptionResponseDTO.builder()

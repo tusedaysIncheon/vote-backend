@@ -48,8 +48,9 @@ public class VoteController {
             @RequestParam(defaultValue = "0") int page, // 몇 번째 페이지인지 (0부터 시작)
             @RequestParam(defaultValue = "10") int size // 한 번에 몇 개 가져올지
     ) {
+        Long userId = SecurityUtils.getCurrentUserId();
         Pageable pageable = PageRequest.of(page, size);
-        Page<VoteResponseDTO> votePage = voteService.getFeedList(pageable);
+        Page<VoteResponseDTO> votePage = voteService.getFeedList(pageable, userId);
 
         return ApiResponse.ok(votePage.getContent());
     }

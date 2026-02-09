@@ -68,12 +68,24 @@ public class VoteService {
 
     // redis MGET을 활용한 피드 목록 조회
     @Transactional(readOnly = true)
-    public Page<VoteResponseDTO> getFeedList(Pageable pageable) {
+    public Page<VoteResponseDTO> getFeedList(Pageable pageable, Long userId) {
         Page<VoteEntity> votePage = voteRepository.findRecommendedVotes(pageable);
         List<Long> voteIds = votePage.stream().map(VoteEntity::getId).toList();
 
         if (voteIds.isEmpty()) {
             return Page.empty(pageable);
+        }
+
+        // 로그인한 유저라면, 현재 페이지의 투표들에 대해 투표 여부 조회 (Batch Query)
+        Map<Long, Long> userVoteMap = new HashMap<>();
+        if (userId != null) {
+            List<VoteRecordEntity> records = voteRecordRepository.findByVoterIdAndVoteIdIn(userId, voteIds);
+            log.info("📢 피드 조회 - 사용자: {}, 조회된 투표 수: {}, 참여한 투표 수: {}", userId, voteIds.size(), records.size());
+            for (VoteRecordEntity record : records) {
+                userVoteMap.put(record.getVote().getId(), record.getVoteOption().getId());
+            }
+        } else {
+            log.info("📢 피드 조회 - 비로그인 사용자");
         }
 
         List<String> keys = voteIds.stream().map(id -> "vote:info:" + id).toList();
@@ -98,6 +110,7 @@ public class VoteService {
             if (info == null) {
                 VoteEntity entity = votePage.getContent().get(i);
                 info = VoteInfoDTO.toDTO(entity); // ⭐ 엔티티 -> VoteInfoDTO 변환
+
                 try {
                     redisTemplate.opsForValue().set("vote:info:" + voteId, objectMapper.writeValueAsString(info),
                             Duration.ofDays(1));
@@ -106,8 +119,14 @@ public class VoteService {
                 }
             }
 
-            VoteStatsDTO stats = getVoteStatus(voteId);
+            VoteEntity entity = votePage.getContent().get(i);
+            VoteStatsDTO stats = getVoteStatus(entity);
             VoteResponseDTO dto = VoteResponseDTO.merge(info, stats);
+
+            // 사용자가 투표했다면 해당 정보 설정
+            if (userVoteMap.containsKey(voteId)) {
+                dto.setVoteStatus(true, userVoteMap.get(voteId));
+            }
 
             dtos.add(dto);
         }
@@ -119,7 +138,13 @@ public class VoteService {
     public VoteResponseDTO getVoteDetails(Long voteId, Long userId) {
 
         VoteInfoDTO info = getVoteInfoWithType(voteId, userId);
-        VoteStatsDTO stats = getVoteStatus(voteId);
+
+        // VoteEntity 조회 (getVoteInfoWithType에서 캐시 미스 시 조회하긴 하지만, 여기서 다시 조회 필요할 수 있음)
+        // 최적화를 위해 getVoteInfoWithType이 Entity를 반환하도록 하거나, 여기서 조회
+        VoteEntity vote = voteRepository.findById(voteId)
+                .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
+
+        VoteStatsDTO stats = getVoteStatus(vote);
 
         VoteResponseDTO response = VoteResponseDTO.merge(info, stats);
 
@@ -132,6 +157,8 @@ public class VoteService {
 
         return response;
     }
+
+    // ... (castVote method remains unchanged) ...
 
     @Transactional
     public void castVote(Long voteId, Long userId, Long optionId) {
@@ -157,6 +184,12 @@ public class VoteService {
         UserDetailsEntity details = user.getUserDetails();
 
         String statsKey = "vote:stats:" + voteId;
+
+        // Redis에 키가 없으면 DB에서 복구 후 증가
+        if (!Boolean.TRUE.equals(redisTemplate.hasKey(statsKey))) {
+            restoreVoteStats(vote);
+        }
+
         redisTemplate.opsForHash().increment(statsKey, "total", 1);
         redisTemplate.opsForHash().increment(statsKey, "opt:" + optionId, 1);
 
@@ -179,28 +212,27 @@ public class VoteService {
     }
 
     private VoteInfoDTO getVoteInfoWithType(Long voteId, Long userId) {
-
+        // ... (existing implementation) ...
         String cacheKey = "vote:info:" + voteId;
 
         String jsonStr = (String) redisTemplate.opsForValue().get(cacheKey);
 
         if (jsonStr != null) {
-            log.info("🔥 Cache HIT! (Redis에서 가져옴)");
+            // ...
             try {
                 return objectMapper.readValue(jsonStr, VoteInfoDTO.class);
             } catch (Exception e) {
-
                 log.error("레디스 파싱 에러", e);
             }
-
         }
 
-        log.info("🐢 Cache MISS.. (DB에서 조회)");
+        // ...
 
         VoteEntity vote = voteRepository.findById(voteId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
 
         VoteInfoDTO info = VoteInfoDTO.toDTO(vote);
+
         try {
             String jsonValue = objectMapper.writeValueAsString(info);
             redisTemplate.opsForValue().set(cacheKey, jsonValue, Duration.ofDays(1));
@@ -211,11 +243,40 @@ public class VoteService {
         return info;
     }
 
-    private VoteStatsDTO getVoteStatus(Long voteId) {
-        String cacheKey = "vote:status:" + voteId;
+    private VoteStatsDTO getVoteStatus(VoteEntity vote) {
+        Long voteId = vote.getId();
+        String cacheKey = "vote:stats:" + voteId;
         Map<Object, Object> rawMap = redisTemplate.opsForHash().entries(cacheKey);
 
+        // Redis에 데이터가 없으면 DB에서 복원
+        if (rawMap == null || rawMap.isEmpty()) {
+            log.info("🐢 Stats Cache MISS.. (DB에서 복원): {}", voteId);
+            restoreVoteStats(vote);
+            // 복원 후 다시 조회
+            rawMap = redisTemplate.opsForHash().entries(cacheKey);
+        } else {
+            log.info("🔥 Stats Cache HIT!: {}", voteId);
+        }
+
         return VoteStatsDTO.toRedisMap(voteId, rawMap);
+    }
+
+    private void restoreVoteStats(VoteEntity vote) {
+        String cacheKey = "vote:stats:" + vote.getId();
+        Map<String, String> initialStats = new HashMap<>();
+
+        // 1. 총 투표 수
+        initialStats.put("total", String.valueOf(vote.getTotalVoteCount()));
+
+        // 2. 옵션별 투표 수
+        for (VoteOptionEntity option : vote.getOptions()) {
+            initialStats.put("opt:" + option.getId(), String.valueOf(option.getCount()));
+        }
+
+        // TODO: 세부 통계(MBTI 등)는 VoteRecord 전체 집계가 필요하므로 일단 생략하거나 비동기 처리
+        // 현재는 0으로 시작
+
+        redisTemplate.opsForHash().putAll(cacheKey, initialStats);
     }
 
     private void incrementStat(String key, Long optionId, String category, Object value) {

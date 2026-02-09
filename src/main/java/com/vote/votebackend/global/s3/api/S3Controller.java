@@ -40,6 +40,10 @@ public class S3Controller {
             finalFolder = "profileImage";
         } else if ("contentImage".equals(requestDTO.getFolder())) {
             finalFolder = "contentImage/" + username;
+        } else if ("votepic".equals(requestDTO.getFolder())) {
+            finalFolder = "votepic/" + username;
+        } else if ("options".equals(requestDTO.getFolder())) {
+            finalFolder = "options/" + username;
         } else {
             throw new IllegalArgumentException("유효하지 않은 폴더명입니다.");
         }

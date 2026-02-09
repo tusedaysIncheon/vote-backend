@@ -23,7 +23,8 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleIllegalArgumentException(
             IllegalArgumentException e,
             HttpServletRequest request) {
-        log.warn("접근 권한 오류 발생 요청 IP: {}, URL: {}", request.getRemoteAddr(), request.getRequestURI());
+        log.warn("잘못된 요청 (Bad Request) - IP: {}, URL: {}, Message: {}", request.getRemoteAddr(),
+                request.getRequestURI(), e.getMessage());
         return ApiResponse.fail("BAD_REQUEST", e.getMessage());
     }
 

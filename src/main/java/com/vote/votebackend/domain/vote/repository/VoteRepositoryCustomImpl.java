@@ -13,51 +13,51 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.vote.votebackend.domain.user.entity.QUserDetailsEntity.userDetailsEntity;
 import static com.vote.votebackend.domain.user.entity.QUserEntity.userEntity;
 import static com.vote.votebackend.domain.vote.entity.QVoteEntity.voteEntity;
 
 @RequiredArgsConstructor
-public class VoteRepositoryCustomImpl implements  VoteRepositoryCustom {
-    private final JPAQueryFactory  queryFactory;
+public class VoteRepositoryCustomImpl implements VoteRepositoryCustom {
+        private final JPAQueryFactory queryFactory;
 
+        @Override
+        public Page<VoteEntity> findRecommendedVotes(Pageable pageable) {
 
-    @Override
-    public Page<VoteEntity> findRecommendedVotes(Pageable pageable) {
+                LocalDateTime now = LocalDateTime.now();
 
-        LocalDateTime now = LocalDateTime.now();
+                LocalDateTime cutOff = now.minusHours(6);
 
-        LocalDateTime cutOff = now.minusHours(6);
+                // gravity 알고리즘 수식 정의
+                // totalVote * 2 + commentCount *5 + 10 / POWER(시간차 + 2, 1.5)
 
-        //gravity 알고리즘 수식 정의
-        // totalVote * 2 + commentCount *5 + 10 / POWER(시간차 + 2, 1.5)
+                // 분자->반응점수
+                NumberExpression<Long> reactionScore = voteEntity.totalVoteCount.multiply(2)
+                                .add(voteEntity.commentCount.multiply(5))
+                                .add(10);
 
-        //분자->반응점수
-        NumberExpression<Long> reactionScore = voteEntity.totalVoteCount.multiply(2)
-                .add(voteEntity.commentCount.multiply(5))
-                .add(10);
+                // 분모->시간 감쇠
+                NumberExpression<Double> timeDecay = Expressions.numberTemplate(Double.class,
+                                "power(( (extract(epoch from cast({1} as timestamp)) - extract(epoch from {0})) / 3600.0) + 2, 1.5)",
+                                voteEntity.createdDate, now);
 
-        //분모->시간 감쇠
-        NumberExpression<Double> timeDecay = Expressions.numberTemplate(Double.class,
-                "power(( (extract(epoch from cast({1} as timestamp)) - extract(epoch from {0})) / 3600.0) + 2, 1.5)",
-                voteEntity.createdDate, now);
+                NumberExpression<Double> gravityScore = reactionScore.castToNum(Double.class).divide(timeDecay);
 
-        NumberExpression<Double> gravityScore = reactionScore.castToNum(Double.class).divide(timeDecay);
+                List<VoteEntity> content = queryFactory
+                                .selectFrom(voteEntity)
+                                .leftJoin(voteEntity.writer, userEntity).fetchJoin()
+                                .where(voteEntity.endDate.gt(cutOff))
+                                .orderBy(gravityScore.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
 
-        List<VoteEntity> content = queryFactory
-                .selectFrom(voteEntity)
-                .leftJoin(voteEntity.writer, userEntity).fetchJoin()
-                .where(voteEntity.endDate.gt(cutOff))
-                .orderBy(gravityScore.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
+                Long total = queryFactory
+                                .select(voteEntity.count())
+                                .from(voteEntity)
+                                .where(voteEntity.endDate.gt(cutOff))
+                                .fetchOne();
 
-        Long total = queryFactory
-                .select(voteEntity.count())
-                .from(voteEntity)
-                .where(voteEntity.endDate.gt(cutOff))
-                .fetchOne();
-
-        return new PageImpl<>(content, pageable, total != null ? total : 0);
-    }
+                return new PageImpl<>(content, pageable, total != null ? total : 0);
+        }
 }
