@@ -37,7 +37,7 @@ public class VoteController {
             throw new InvalidTokenException("로그인이 필요한 서비스입니다.");
         }
 
-        VoteResponseDTO voteResponse = voteService.createVote(user,dto);
+        VoteResponseDTO voteResponse = voteService.createVote(user, dto);
 
         return ApiResponse.created(voteResponse);
     }
@@ -47,7 +47,7 @@ public class VoteController {
     public ApiResponse<List<VoteResponseDTO>> loadFeed(
             @RequestParam(defaultValue = "0") int page, // 몇 번째 페이지인지 (0부터 시작)
             @RequestParam(defaultValue = "10") int size // 한 번에 몇 개 가져올지
-    ){
+    ) {
         Pageable pageable = PageRequest.of(page, size);
         Page<VoteResponseDTO> votePage = voteService.getFeedList(pageable);
 
@@ -70,15 +70,14 @@ public class VoteController {
     @Operation(summary = "투표 옵션 선택", description = "투표의 옵션 선택")
     public ApiResponse<Void> selectOption(
             @PathVariable Long voteId,
-            @RequestBody @Valid VoteInteractDTO interactDTO
-            ){
+            @RequestBody @Valid VoteInteractDTO interactDTO) {
         Long userId = SecurityUtils.getCurrentUserId();
 
         if (userId == null) {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        voteService.castVote(voteId,userId, interactDTO.getOptionId());
+        voteService.castVote(voteId, userId, interactDTO.getOptionId());
 
         return ApiResponse.created(null);
 

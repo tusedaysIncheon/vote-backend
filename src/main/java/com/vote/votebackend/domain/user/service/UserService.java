@@ -36,7 +36,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserService extends DefaultOAuth2UserService implements UserDetailsService {
+public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
@@ -72,22 +72,6 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                 saved.getIsSocial(),
                 saved.getEmail()
         );
-
-    }
-
-    //자체 로그인
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-
-        UserEntity entity = userRepository.findByUsernameAndIsLockAndIsSocial(username, false, false)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
-
-        return User.builder()
-                .username(entity.getUsername())
-                .password(entity.getPassword())
-                .roles(entity.getRoleType().name())
-                .accountLocked(entity.getIsLock())
-                .build();
 
     }
 
@@ -133,73 +117,6 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
 
     }
-
-
-    //소셜 로그인 ( 매 로그인시: 신규 = 가입, 기존 = 업데이트)
-    @Override
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-
-        //DefaultOAuth2UserService 의 loadUser 메소드 오버라이드
-        //부모 메서드 호출
-        OAuth2User oAuth2User = super.loadUser(userRequest);
-
-        //데이터
-        Map<String, Object> attributes;
-        List<GrantedAuthority> authorities;
-
-        String username;
-        String role = UserRoleType.USER.name();
-        String email;
-
-
-        //provider 제공자 별 데이터 획득 ( 제공자 마다 데이터 제공 방법이 다름)
-
-        String registrationId = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
-
-
-        if (registrationId.equals(SocialProviderType.NAVER.name())) {
-
-            attributes = (Map<String, Object>) oAuth2User.getAttributes().get("response");
-            username = registrationId + "_" + attributes.get("id");
-            email = attributes.get("email").toString();
-
-        } else if (registrationId.equals(SocialProviderType.GOOGLE.name())) {
-
-            attributes = (Map<String, Object>) oAuth2User.getAttributes();
-            username = registrationId + "_" + attributes.get("sub");
-            email = attributes.get("email").toString();
-
-        } else {
-            throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인입니다.");
-        }
-
-        // 데이터베이스 조회 -> 존재하면 업데이트, 없으면 신규 가입
-        Optional<UserEntity> entity = userRepository.findByUsernameAndIsSocial(username, true);
-
-        if (entity.isPresent()) {
-            //role 조회
-            role = entity.get().getRoleType().name();
-        } else {
-            // 신규 유저 추가
-            UserEntity userEntity = UserEntity.builder()
-                    .username(username)
-                    .password("")
-                    .isLock(false)
-                    .isSocial(true)
-                    .socialProviderType(SocialProviderType.valueOf(registrationId))
-                    .roleType(UserRoleType.USER)
-                    .email(email)
-                    .build();
-
-            userRepository.save(userEntity);
-        }
-
-        authorities = List.of(new SimpleGrantedAuthority(role));
-
-        return new CustomOAuth2User(attributes, authorities, username);
-
-    }
-
 
     //자체 /소셜 유저 정보조회
     @Transactional(readOnly = true)

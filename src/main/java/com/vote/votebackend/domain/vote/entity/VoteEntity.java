@@ -1,6 +1,5 @@
 package com.vote.votebackend.domain.vote.entity;
 
-
 import com.vote.votebackend.domain.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -65,20 +64,27 @@ public class VoteEntity {
     public void increaseCommentCount() {
         this.commentCount++;
     }
+
     public void increaseTotalVoteCount() {
         this.totalVoteCount++;
     }
 
     // 비즈니스 로직 : 카운트 감소
-    public void decreaseCommentCount(){this.commentCount--;}
-    public void decreaseTotalVoteCount(){this.totalVoteCount--;}
+    public void decreaseCommentCount() {
+        this.commentCount--;
+    }
 
-    //투표 옵션 Id 부여
+    public void decreaseTotalVoteCount() {
+        this.totalVoteCount--;
+    }
+
+    // 투표 옵션 Id 부여
     public void addOption(VoteOptionEntity option) {
         this.options.add(option);
         option.setVote(this);
     }
-    //투표 마감 확인
+
+    // 투표 마감 확인
     public boolean isClosed() {
         return LocalDateTime.now().isAfter(this.endDate);
     }

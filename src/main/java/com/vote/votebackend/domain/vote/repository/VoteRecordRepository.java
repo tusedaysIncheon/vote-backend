@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface VoteRecordRepository extends JpaRepository<VoteRecordEntity,Long> {
+public interface VoteRecordRepository extends JpaRepository<VoteRecordEntity, Long> {
 
-    boolean existsByVoteIdAndVoterId(Long voteId,Long userId);
+    boolean existsByVoteIdAndVoterId(Long voteId, Long userId);
 
     Optional<VoteRecordEntity> findByVoteIdAndVoterId(Long voteId, Long voterId);
 }

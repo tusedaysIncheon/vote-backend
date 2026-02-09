@@ -1,27 +1,28 @@
-package com.vote.votebackend.global.security.custom;
+package com.vote.votebackend.global.security.service;
 
 import com.vote.votebackend.domain.user.entity.UserEntity;
+import com.vote.votebackend.global.security.custom.CustomUserDetails;
 import com.vote.votebackend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Qualifier("userDetailsServiceImpl")
-public class UserDetailsServiceImpl implements UserDetailsService {
-
+public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        UserEntity userEntity = userRepository.findByUsername(username)
-                .orElseThrow(()-> new UsernameNotFoundException("유저를 찾을 수 없습니다:" + username));
+        UserEntity entity = userRepository.findByUsernameAndIsLock(username, false)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return new CustomUserDetails(userEntity);
+        return new CustomUserDetails(entity);
     }
 }
